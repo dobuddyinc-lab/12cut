@@ -89,15 +89,23 @@
     }
     </script>
 
-    <!-- Fonts -->
+    <!-- Fonts: Critical (Pretendard body font) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Zen+Maru+Gothic:wght@400;700;900&family=ZCOOL+KuaiLe&family=Space+Mono:wght@400;700&display=swap"
-        rel="stylesheet">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         rel="stylesheet">
+    <!-- Fonts: Non-blocking (Nunito, Space Mono) -->
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    </noscript>
+    <!-- Fonts: CJK (loaded on demand via JS) -->
     <style>
         @font-face {
             font-family: 'Cafe24Ssurround';
@@ -108,7 +116,6 @@
     </style>
 
     <link rel="stylesheet" href="style.css">
-    <script type="module" src="https://unpkg.com/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
 </head>
 
 <body>
@@ -141,7 +148,7 @@
     <!-- ===== HERO (multi-frame scroll) ===== -->
     <section class="hero" id="hero">
         <div class="hero__bg">
-            <video autoplay loop muted playsinline preload="auto" class="hero__video">
+            <video autoplay loop muted playsinline preload="metadata" poster="assets/images/hero-product.webp" class="hero__video">
                 <source src="assets/videos/hero-bg.mp4" type="video/mp4">
             </video>
             <div class="hero__overlay"></div>
@@ -168,7 +175,7 @@
                     your precious moments, held in<br>
                     vintage film slides.
                 </p>
-                <a href="https://www.donutframe.com/12cut_editor/index.html" target="_blank" rel="noopener noreferrer" class="hero__cta js-editor-link" data-plan="single">
+                <a href="https://www.12cut.co.kr/" target="_blank" rel="noopener noreferrer" class="hero__cta">
                     <span data-i18n="cta">Make Your Story</span>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                         <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -208,18 +215,18 @@
         <div class="film-reel" aria-label="12컷 필름 슬라이드 릴">
             <div class="film-reel__ring">
                 <div class="film-reel__disc"></div>
-                <div class="film-reel__slot" style="--i:0"><img src="assets/images/slides/slide-01.jpg" alt="이자카야의 밤" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:1"><img src="assets/images/slides/slide-02.jpg" alt="핑크빛 방" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:2"><img src="assets/images/slides/slide-03.jpg" alt="말티즈 강아지" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:3"><img src="assets/images/slides/slide-04.jpg" alt="아이스크림 데이트" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:4"><img src="assets/images/slides/slide-05.jpg" alt="나른한 오후" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:5"><img src="assets/images/slides/slide-06.jpg" alt="여름 바다" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:6"><img src="assets/images/slides/slide-07.jpg" alt="따뜻한 저녁" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:7"><img src="assets/images/slides/slide-08.jpg" alt="교복 셀카" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:8"><img src="assets/images/slides/slide-09.jpg" alt="레트로 감성" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:9"><img src="assets/images/slides/slide-10.jpg" alt="크리스마스 폴라로이드" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:10"><img src="assets/images/slides/slide-11.jpg" alt="롤러스케이트" loading="lazy" /></div>
-                <div class="film-reel__slot" style="--i:11"><img src="assets/images/slides/slide-12.jpg" alt="웨딩" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:0"><img src="assets/images/slides/slide-01.webp" alt="이자카야의 밤" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:1"><img src="assets/images/slides/slide-02.webp" alt="핑크빛 방" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:2"><img src="assets/images/slides/slide-03.webp" alt="말티즈 강아지" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:3"><img src="assets/images/slides/slide-04.webp" alt="아이스크림 데이트" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:4"><img src="assets/images/slides/slide-05.webp" alt="나른한 오후" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:5"><img src="assets/images/slides/slide-06.webp" alt="여름 바다" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:6"><img src="assets/images/slides/slide-07.webp" alt="따뜻한 저녁" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:7"><img src="assets/images/slides/slide-08.webp" alt="교복 셀카" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:8"><img src="assets/images/slides/slide-09.webp" alt="레트로 감성" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:9"><img src="assets/images/slides/slide-10.webp" alt="크리스마스 폴라로이드" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:10"><img src="assets/images/slides/slide-11.webp" alt="롤러스케이트" loading="lazy" /></div>
+                <div class="film-reel__slot" style="--i:11"><img src="assets/images/slides/slide-12.webp" alt="웨딩" loading="lazy" /></div>
             </div>
             <div class="film-reel__center">
                 <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -254,7 +261,7 @@
                 </svg>
             </div>
             <div class="film-reel__lens" aria-label="뷰파인더">
-                <img class="film-reel__lens-img" src="assets/images/slides/slide-01.jpg" alt="" />
+                <img class="film-reel__lens-img" src="assets/images/slides/slide-01.webp" alt="" />
                 <div class="film-reel__lens-grain"></div>
                 <div class="film-reel__lens-vignette"></div>
             </div>
@@ -274,11 +281,11 @@
                 <div class="product__viewer-wrap" id="product-viewer">
                     <img
                         id="product-render"
-                        src="assets/images/12CUT VARIATION.3987.png"
+                        src="assets/images/12CUT VARIATION.3987.webp"
                         alt="12cut white"
                         class="product__render-img"
                         draggable="false"
-                        loading="eager"
+                        loading="lazy"
                         decoding="async"
                     />
                 </div>
@@ -317,7 +324,7 @@
         <div class="how__steps">
             <article class="how__card">
                 <div class="how__card-mockup">
-                    <img src="assets/images/how-step1.png" alt="Select 12 photos" width="343" height="343"
+                    <img src="assets/images/how-step1.webp" alt="Select 12 photos" width="343" height="343"
                         loading="lazy" decoding="async" />
                 </div>
                 <span class="how__card-step">step 1</span>
@@ -332,7 +339,7 @@
 
             <article class="how__card">
                 <div class="how__card-mockup">
-                    <img src="assets/images/how-step2.png" alt="Arrange order" width="343" height="343"
+                    <img src="assets/images/how-step2.webp" alt="Arrange order" width="343" height="343"
                         loading="lazy" decoding="async" />
                 </div>
                 <span class="how__card-step">step 2</span>
@@ -347,7 +354,7 @@
 
             <article class="how__card">
                 <div class="how__card-mockup">
-                    <img src="assets/images/how-step3.png" alt="Trim photos" width="343" height="343"
+                    <img src="assets/images/how-step3.webp" alt="Trim photos" width="343" height="343"
                         loading="lazy" decoding="async" />
                 </div>
                 <span class="how__card-step">step 3</span>
@@ -474,7 +481,7 @@
         </div>
 
         <div class="pricing__cta">
-            <a href="#" class="pricing__cta-btn js-pricing-cta" data-plan="same2" data-i18n="cta" aria-label="Make Your Story" tabindex="0">Make Your Story</a>
+            <a href="https://www.12cut.co.kr/" target="_blank" rel="noopener noreferrer" class="pricing__cta-btn" data-i18n="cta" aria-label="Make Your Story" tabindex="0">Make Your Story</a>
         </div>
     </section>
 
@@ -483,7 +490,7 @@
         <div class="faq__inner">
             <div class="faq__media">
                 <div class="faq__video-wrap">
-                    <video autoplay loop muted playsinline class="faq__video" poster="assets/images/product-viewer.png">
+                    <video autoplay loop muted playsinline preload="none" class="faq__video" poster="assets/images/product-viewer.webp">
                         <source src="assets/videos/product-exploded.mp4" type="video/mp4">
                     </video>
                     <div class="faq__video-grain"></div>

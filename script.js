@@ -341,27 +341,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (pricingCta) {
-        pricingCta.addEventListener('click', (e) => {
-            e.preventDefault();
-            const plan = pricingCta.dataset.plan || 'single';
-            window.location.href = `${NEXT_APP_URL}/cart?plan=${encodeURIComponent(plan)}`;
-        });
-    }
 
-    function syncCommerceLinks() {
-        document.querySelectorAll('.js-editor-link').forEach((link) => {
-            const plan = link.dataset.plan || 'single';
-            link.href = buildEditorLink(plan);
-            link.setAttribute('aria-label', 'Open 12cut editor');
-        });
-    }
+
+    const loadedFonts = new Set();
+    const loadLangFont = (lang) => {
+        if (loadedFonts.has(lang)) return;
+        loadedFonts.add(lang);
+        const fontUrls = {
+            ja: 'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap',
+            zh: 'https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap',
+        };
+        const url = fontUrls[lang];
+        if (!url) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = url;
+        document.head.appendChild(link);
+    };
 
     const applyLang = (lang) => {
         currentLang = lang;
         const dict = translations[lang];
         if (!dict) return;
 
+        loadLangFont(lang);
         document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
 
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -375,13 +378,11 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.toggle('lang-btn--active', btn.dataset.lang === lang);
         });
 
-        syncCommerceLinks();
     };
 
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => applyLang(btn.dataset.lang));
     });
-    syncCommerceLinks();
 
     // ===== NAV SCROLL EFFECT =====
     const nav = document.getElementById('nav');
@@ -603,18 +604,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== PRODUCT IMAGE VIEWER =====
 
     const colorMap = [
-        { label: 'white', ko: '화이트', img: 'assets/images/12CUT VARIATION.3987.png' },
-        { label: 'cream', ko: '크림', img: 'assets/images/12CUT VARIATION.3988.png' },
-        { label: 'light blue', ko: '라이트 블루', img: 'assets/images/12CUT VARIATION.3989.png' },
-        { label: 'green', ko: '그린', img: 'assets/images/12CUT VARIATION.3991.png' },
-        { label: 'red', ko: '레드', img: 'assets/images/12CUT VARIATION.3990.png' },
-        { label: 'dark gray', ko: '다크 그레이', img: 'assets/images/12CUT VARIATION.3992.png' },
+        { label: 'white', ko: '화이트', img: 'assets/images/12CUT VARIATION.3987.webp' },
+        { label: 'cream', ko: '크림', img: 'assets/images/12CUT VARIATION.3988.webp' },
+        { label: 'light blue', ko: '라이트 블루', img: 'assets/images/12CUT VARIATION.3989.webp' },
+        { label: 'green', ko: '그린', img: 'assets/images/12CUT VARIATION.3991.webp' },
+        { label: 'red', ko: '레드', img: 'assets/images/12CUT VARIATION.3990.webp' },
+        { label: 'dark gray', ko: '다크 그레이', img: 'assets/images/12CUT VARIATION.3992.webp' },
     ];
-
-    colorMap.forEach(c => {
-        const preload = new Image();
-        preload.src = c.img;
-    });
 
     // ===== PRODUCT COLOR SELECTOR =====
     const colorBtns = document.querySelectorAll('.product__color');
