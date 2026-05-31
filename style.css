@@ -120,7 +120,7 @@ img {
   left: 0;
   right: 0;
   z-index: 1000;
-  padding: 0 var(--section-px);
+  padding: 0 max(30px, calc((100vw - 1280px) / 2));
   transition: all 0.4s var(--ease-out);
 }
 
@@ -140,6 +140,8 @@ img {
 .nav__logo {
   display: flex;
   align-items: center;
+  align-self: flex-start;
+  margin-top: 1.3em;
   line-height: 0;
   transition: opacity 0.3s var(--ease-out);
 }
@@ -1331,6 +1333,12 @@ img {
 /* ========================================
    RESPONSIVE
    ======================================== */
+@media (max-width: 850px) {
+  .nav {
+    padding: 0 15px;
+  }
+}
+
 @media (max-width: 768px) {
   .nav__links {
     display: none;
