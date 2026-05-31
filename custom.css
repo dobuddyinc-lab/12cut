@@ -1,0 +1,16 @@
+.bd2-logo{filter:brightness(0);height:34px;margin-top:1.3em}
+
+#foot-bar{display:none!important}
+@media screen and (max-width: 850px){#header .header_top{height:56px}.stick .bd2-logo{margin-top:1.35em}}
+@media screen and (min-width: 851px){.stick .bd2-logo{margin-top:6.2em}}
+.icon_search>img,.sticky-order>.btns>:not(.primary),.ord-box>.btns>:not(.primary){display:none}
+.item_photo_big[data-i]::after{display:none!important}
+.item_photo_big .img_photo_big{position:relative}
+@media screen and (max-width:1200px){
+.item_photo_big{max-width:100%!important}
+.item_photo_slide .slider_goods_nav{display:flex!important;gap:6px;overflow-x:auto!important;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;white-space:normal!important;padding:8px 0}
+.item_photo_slide .slider_goods_nav .slick-list,.item_photo_slide .slider_goods_nav .slick-track{display:contents!important}
+.item_photo_slide .slider_goods_nav li{flex:0 0 calc(33.33% - 4px)!important;display:block!important;width:auto!important;height:auto!important;padding:0!important;margin:0!important;scroll-snap-align:start}
+.item_photo_slide .slider_goods_nav li a{display:block!important;width:100%!important;height:auto!important;box-sizing:border-box!important}
+.item_photo_slide .slider_goods_nav li img{width:100%!important;height:auto!important;padding:5px!important;margin:0!important;box-sizing:border-box!important}
+}
