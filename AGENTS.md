@@ -96,8 +96,20 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **영상 캐시 정책 = 파일명 버전(Option A 채택)**: 캐시 30일이라 같은 파일명 덮어쓰면 최대 한 달 stale. → **교체 시 파일명에 버전 부여**(`hero.mp4`→`hero-v2.mp4`). 개발자가 업로드 후, `main/index.html`의 `<source src>` 한 줄만 수정해 반영. (배너관리 연동(B안)은 히어로 배경 영상의 `autoplay muted loop playsinline` 속성 보장 불확실로 보류.)
 - **치환 규칙(재현용)**: `main/index.html`에서 `https://12cut.pages.dev/assets/videos/hero-bg.mp4`→`https://img.12cut.net/12cut_prod/hero.mp4`, `.../product-exploded.mp4`→`.../prod.mp4`, 나머지 `https://12cut.pages.dev/`→`/data/skin/front/moment/img/home/`. 업로드 배치 원본은 `.sftp_batch.txt`.
 
+#### 히어로 배경·카피 현황 (2026-06 / 배포·검증됨)
+- **히어로 배경 = 정지 이미지(임시)**: 영상 제작 전까지 `<video>` 대신 `<img class="hero__video">` 사용. 소스는 골든아워 교실 창가에서 12cut을 든 손 컷 → `assets/images/hero-still.webp`(원본 2752×1536 JPEG 2.5MB를 폭 1920·q82 webp로 75KB 변환). 스킨 경로 `/data/skin/front/moment/img/home/assets/images/hero-still.webp?v=1`로 로드. **원본 JPEG(`Delicate_shot_...jpeg`)은 영상 소스라 로컬 보관, git 미추적**(처리 방식 A=.gitignore / B=assets/sources 보관 미정).
+- **영상 복원법**: 영상 완성 시 `main/index.html`의 `<img ...hero-still.webp...>` 한 줄을 `<video autoplay loop muted playsinline preload="auto" class="hero__video"><source src="https://img.12cut.net/12cut_prod/hero.mp4"></video>`로 되돌리면 됨. **히어로 영상(`hero.mp4`)·FAQ 영상(`prod.mp4`)은 `img.12cut.net/12cut_prod/`에 그대로 보존**(200·Range 206 확인).
+- **히어로 딤 완화**: `.hero__overlay` 검정 오버레이 `rgba(26,26,26,0.65)→0.45`(따뜻한 빛 강조, 중앙 흰 헤드라인 가독 유지). 더 밝게=0.35/더 어둡게=0.55로 조정 가능. 텍스트가 정중앙이라 균일딤 한계 시 방사형 그라데이션(가장자리 밝게+중앙 보호) 대안 있음.
+- **슬로건 강조**: `.hero__title` `clamp(30,4.6vw,60)→clamp(34,5.4vw,76)`, 12CUT 로고는 `height:1.3em` 비례 자동 확대. 슬로건↔CTA 간격 24→36px. **subtitle 제거**(eyebrow "Film Slide Viewer"와 정보 중복 → A안: eyebrow 유지/subtitle 삭제). `section-label` ×6(Gallery/Product/How It Works/Stories/Pricing/FAQ)은 스캔 앵커라 유지.
+- **캐시버전**: `main/index.html`의 `style.css?v=N` 쿼리로 CSS 캐시 우회. **현재 `?v=5`**(다음 CSS 수정 시 `?v=6`으로 올릴 것).
+- **영상 시나리오(미확정)**: A안 "창가의 빛"(히어로 배경용, 8~12초 루프 무음, 느린 push-in) **권장** / B안 "12개의 장면"(제품 기능 몽타주, 별도 필름) / C안 "둘의 하루"(브랜드 필름, 장기). 한 촬영으로 A+B 동시 확보 가능.
+
 #### 미해결/다음 작업
-- **git 커밋**: `gallery.js`(신규), `custom.css`/`custom.js`/`.htaccess`/`AGENTS.md` 변경 스냅샷 미커밋.
+- **영상 제작 → 히어로 복원**: A안 시나리오로 히어로 배경 영상 제작 후 위 "영상 복원법"대로 `<img>`→`<video>` 전환.
+- **원본 JPEG 처리**: `.gitignore` 제외(A) vs `assets/sources/` 보관 커밋(B) 결정.
+- **push 여부**: 현재 `main`이 `public/main`보다 앞섬. **`public/main`이 공개 원격이면 `.sftp_batch.txt`(SFTP 서버 경로 구조 포함) push 적절성 확인** 필요.
+- **히어로 미세조정(선택)**: 모바일 슬로건 줄바꿈(하한 34px→32px 여부), 76px에서 12CUT 로고 밸런스(`1.3em→1.15em` 여부) — 실기기 확인 후 판단.
+- **git 커밋**: `gallery.js`(신규), `.htaccess` 변경 스냅샷 미커밋(이번 세션의 `custom.css`/`custom.js`/`style.css`/`AGENTS.md`/히어로 이미지는 커밋 완료).
 
 ### 브랜드
 - 브랜드 액센트 컬러: `#F63237` (CTA, 활성 인디케이터 등 강조 요소에 사용)
