@@ -1,0 +1,107 @@
+{
+  "model": "kling-3.0",
+  "platform": "higgsfield",
+  "settings": {
+    "duration": 15,
+    "aspect_ratio": "16:9",
+    "resolution": "1080p",
+    "fps": 24,
+    "audio": "native_on",
+    "subject_consistency": true
+  },
+  "prompt": "Intimate cinematic 12CUT slide-viewer product film. Camera OPENS on the hero still (two hands holding the matte-white 12CUT at a sunlit classroom window, cherry-blossom bokeh, golden hour), pushes in INTO the device viewfinder to watch photo slides click and rotate, pulls out to reveal three people moved to happy tears, then pushes back into warm golden light and resolves on a clean product endcard. Kodak Portra 400 film look, warm golden-hour tone, ASMR mechanical-click sound design, NO music. Fluid single-axis push-in/pull-out only, HARD cuts between montage beats.",
+  "references": {
+    "HeroStill": "hero-still.webp",
+    "ProductFront": "12CUT ele.front.png",
+    "ProductBack": "12CUT ele.back.png",
+    "ProductTop": "12CUT ele.top.png",
+    "ProductPer": "12CUT per1.4001.png",
+    "ProductExploded": "12CUT.3990.png",
+    "CharA": "character-mother.png",
+    "CharB": "character-teens.png",
+    "CharC": "character-lover.png",
+    "Slide1": "viewfinder-slide-01.png",
+    "Slide2": "viewfinder-slide-02.png",
+    "Slide3": "viewfinder-slide-03.png"
+  },
+  "scenes": [
+    {
+      "scene": 1,
+      "duration": 3,
+      "description": "OPENS EXACTLY on @HeroStill (two hands holding the matte-white 12CUT toward a sunlit classroom window, cherry-blossom and school-building bokeh, golden hour); camera pushes in toward the device and enters the 4:3 landscape viewfinder window; warm golden light reveals @Slide1 (baby hand gripping finger); CLICK rotates LEFT to @Slide2 (girls peace signs); CLICK to @Slide3 (couple autumn street); 12-slot disc silhouette (@ProductExploded) frames each slide",
+      "camera": "slow continuous push-in along Z-axis from hero still into the viewfinder, no shake",
+      "start_frame": "@HeroStill (hands holding 12CUT at sunlit window)",
+      "end_frame": "@Slide3 inside viewfinder interior",
+      "lighting": "golden-hour window backlight transitioning to warm amber backlight through slides, 3200-3800K",
+      "audio": "soft room ambience then metallic mechanical CLICK per rotation, silence between"
+    },
+    {
+      "scene": 2,
+      "duration": 3,
+      "description": "camera pulls back through the viewfinder (@ProductBack to @ProductPer) to device held in two hands, continues to Person A (@CharA) lowering 12CUT from her eye, tearful-happy smile, eyes glistening, chin trembling, newborn asleep on her chest",
+      "camera": "smooth pull-back on Z-axis, slight micro-drift on face",
+      "start_frame": "@ProductBack viewfinder interior",
+      "end_frame": "@CharA face close-up lowering device",
+      "lighting": "soft diffused window light camera-left, rim light camera-right",
+      "audio": "fabric rustle, baby breathing, gentle exhale"
+    },
+    {
+      "scene": 3,
+      "duration": 2,
+      "description": "HARD CUT viewfinder interior slide CLICKS rotates LEFT, HARD CUT to Person B (@CharB) two middle-school girls pressing 12CUT (@ProductPer) between their faces, peering from opposite sides, bursting into giggles, shoulders shaking, one playfully shoving the other",
+      "camera": "static interior then micro-drift close-up",
+      "lighting": "warm window light, Portra 400 tone",
+      "audio": "CLICK, muffled distant giggle"
+    },
+    {
+      "scene": 4,
+      "duration": 2,
+      "description": "HARD CUT viewfinder interior slide CLICKS rotates LEFT, HARD CUT to Person C (@CharC) holding 12CUT to her eye, other hand on chest, pulling it away slowly, biting lower lip, eyes welling, single tear catching light; FRONT face (@ProductFront) briefly visible (lens hole, red heart strap tab, '12cut' text)",
+      "camera": "static interior then micro-drift close-up",
+      "lighting": "soft diffused window light camera-left, rim light camera-right",
+      "audio": "CLICK, gentle exhale"
+    },
+    {
+      "scene": 5,
+      "duration": 2,
+      "description": "camera pushes forward back into the viewfinder; two final slides rotate with deliberate slow CLICKS; photographs glow with intensifying warm golden light, overexposing gently until frame fills with soft amber warmth",
+      "camera": "push-in on Z-axis",
+      "lighting": "intensifying warm amber, gentle highlight bloom",
+      "audio": "slow deliberate CLICKS"
+    },
+    {
+      "scene": 6,
+      "duration": 3,
+      "description": "endcard: clean cream/warm-white background, 12CUT device (@ProductFront) centered at 25-30% frame, FRONT face to camera, perfectly still; text fades in below '따뜻한 빛으로 보는 12장의 행복한 기억' then '12CUT' logo beneath; ZERO motion, hold",
+      "camera": "locked off, zero motion",
+      "start_frame": "@ProductFront centered on cream background",
+      "lighting": "clean even soft light, no harsh shadows",
+      "audio": "intimate silence",
+      "text_overlay": ["따뜻한 빛으로 보는 12장의 행복한 기억", "12CUT"]
+    }
+  ],
+  "global_style": {
+    "look": "Kodak Portra 400 film emulation, lifted shadows, warm midtones, soft highlight rolloff, ISO 400 grain",
+    "depth_of_field": "shallow f/1.8 on humans, sharp on product endcard",
+    "camera_rule": "single-axis push-in/pull-out only, NO pan, NO tilt, NO handheld in viewfinder interiors",
+    "transitions": "HARD cuts, no dissolve",
+    "music": "none, sound design only"
+  },
+  "constraints": [
+    "opening first frame MUST be @HeroStill exactly (hands holding 12CUT at sunlit window), then push-in into viewfinder",
+    "viewfinder window 4:3 LANDSCAPE rounded-rectangle only (NO square, NO circle)",
+    "product body matte white only, rounded-square, match @ProductFront",
+    "shutter button red dome top-right corner, match @ProductTop",
+    "heart strap tab red with white heart cutout left side, match @ProductFront",
+    "lens hole circular center-right of FRONT face, match @ProductFront",
+    "'12cut' text embossed bottom-center of FRONT face, match @ProductFront",
+    "internal 12-slot black film disc, match @ProductExploded",
+    "slides rotate LEFT, mechanical stepped, NOT smooth",
+    "slide photos 4:3 LANDSCAPE, match @Slide1 @Slide2 @Slide3 colour and tone",
+    "NO text overlaid until endcard scene 6",
+    "endcard product FRONT face centered, ZERO motion",
+    "NO music track, sound design only",
+    "LEFT INDEX FINGER presses shutter in any visible press, NEVER right hand",
+    "Person A/B/C must match @CharA/@CharB/@CharC for face and build"
+  ]
+}
