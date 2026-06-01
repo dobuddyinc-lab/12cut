@@ -39,34 +39,42 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - `/dobuddy/12cut/custom.js` — 12cut 전용 스크립트 (`global.js`가 `setLib('/dobuddy/${alias}/custom.js')`로 서비스별 분기 로드)
 - `/data/skin/front/moment/**` — 12cut 사이트 스킨 (`moment`)
 
+### 협업 경계 (외주 공통 레이어 / 2026-06 합의)
+- **공통 레이어 = 외주 담당**: `_header.html`(공통화됨)·스킨 공통부·전 서비스 공유 구조는 외주가 1차 소유. 외주 권고: **"메인을 제외한 커스텀은 `/dobuddy/<service>/` 하위에서만"** → 12cut 신규 커스텀은 원칙적으로 `/dobuddy/12cut/`(특히 `custom.js`) 안에서 처리(별도 파일·`_header.html` 로더 추가 지양).
+- **`_header.html` 직접 수정 = 허용됨(사용자 확인)**: 12cut도 필요 시 `_header.html`을 직접 수정 가능. 단 **공통 파일이므로 타 서비스 영향 0** 보장이 전제(서비스 분기/조건 안에서만 변경). 가능하면 공통부 변경은 외주와 조율.
+- **stale 경고**: 외주가 공통/스킨/`custom.js`를 수정하면 **이 문서 서술이 즉시 stale**해질 수 있음 → 외주 변경 회신 수신 시 **`curl ?z=$RANDOM`으로 라이브를 우선 재확인**하고, 로컬 레포는 라이브 기준으로 **pull 후** 편집(로컬 구버전 업로드로 외주 작업 덮어쓰기 방지).
+
 ### 로딩 체인 & 캐시 (중요)
 - `_header.html` → 공용 `global.js`(browndust2) → `alias` 판별 → `setLib('/dobuddy/12cut/custom.js')` → `custom`(main/beforeRun/afterRun) 정의
 - `custom.afterRun()`는 `global.js`의 `run()` 마지막에 호출됨 (DOM·`data-i` 세팅 완료 후)
 - **`alias` 함정**: 실제 로드되는 건 **CDN 판** `https://browndust2-goods.com/dobuddy/global.js`이며, 여기에는 매핑에 `'12cut':'12cut'`가 있어 정상. 단, `https://12cut.co.kr/dobuddy/global.js`(오리진 사본)는 이 키가 빠진 **구버전**이라 alias=undefined가 나온다. **분석 시 반드시 `_header.html`이 실제 로드하는 CDN URL을 봐야 한다.**
 - **CSS/JS 캐시버스팅(유일하게 신뢰 가능)**: `_header.html`에서 `{=setBrowserCache('/dobuddy/12cut/파일')}` 사용 → `?ts=filemtime` 자동 부여. **파일 수정 시 URL이 바뀌어 모든 기기(폰 포함) 캐시를 무조건 우회**한다.
 - **`setLib` 함정 1**: URL 마지막 3글자가 `css`일 때만 `<link>`로 처리. `custom.css?v=...`처럼 쿼리를 붙이면 `<script>`로 로드되어 **스타일 미적용**.
-- **`setLib` 함정 2 (중요)**: `setLib`는 `custom.js`를 **버전 파라미터 없이** 로드한다. 따라서 `custom.js`는 엣지/브라우저 캐시(특히 폰)에 옛 버전이 오래 남는다. **`?b=$RANDOM` 같은 무작위 쿼리는 엣지가 무시하고 stale을 주는 경우가 있다.** → **JS 신규 로직은 `custom.js`에 의존하지 말고 별도 파일로 분리해 `_header.html`에서 `setBrowserCache`로 로드할 것.**
-- **`.htaccess` 캐시 제어**: `/dobuddy/12cut/.htaccess`에 `mod_headers`로 js/css를 `Cache-Control: no-cache, must-revalidate`로 설정함(적용 확인됨, 12cut 폴더 한정). 단 반영에 origin→엣지 전파 지연(1~2분) 있음.
+- **`setLib` 함정 2 (현황 업데이트 2026-06)**: `setLib`는 `custom.js`를 **버전 파라미터 없이** 로드한다. 과거엔 이로 인해 폰 엣지/브라우저에 옛 `custom.js`가 오래 남아(stale) 신규 JS를 별도 파일+`setBrowserCache`로 분리했었다. **현재는 아래 `.htaccess` `no-cache, must-revalidate`가 `custom.js`에 실효적으로 적용됨이 라이브 헤더로 검증됨**(`cache-control: no-cache, must-revalidate` + `etag`/`last-modified` 응답 → 매 로드 재검증). → **신규 JS를 `custom.js`에 직접 넣어도 모바일 stale 위험은 낮음**(별도 파일 분리는 더 이상 필수 아님). 단 엣지 재검증 보장은 변경 직후 **실기기 1회 확인** 권장.
+- **`.htaccess` 캐시 제어(검증됨)**: `/dobuddy/12cut/.htaccess`에 `mod_headers`로 js/css를 `Cache-Control: no-cache, must-revalidate`로 설정함. **라이브 `custom.js` 응답 헤더로 적용 확인**(`?z=$RANDOM` 우회 없이도 no-cache 반환). 12cut 폴더 한정. 단 반영에 origin→엣지 전파 지연(1~2분) 있음.
 - 오리진 업로드 후 엣지 반영까지 **1~2분 지연** 있음. 업로드 직후 curl이 stale이면 잠시 후 재확인한다.
 - 스킨 템플릿(`_header.html`) 변경은 고도몰 컴파일 캐시로 반영까지 ~20초 소요 가능
 
 ### 상품 이미지 갤러리 (도트 인디케이터 + 스와이프) — 구현 위치
-- **`/dobuddy/12cut/gallery.js`** (독립 파일, `_header.html`에서 `setBrowserCache`로 로드). 캐시 무관·`custom.js` 실행 여부 무관하게 동작.
-- 동작: `/goods/goods_view.php`에서만 실행 → 요소 등장까지 폴링(최대 12s, `global.js`의 `#app` 재구성 타이밍 흡수) → `.img_photo_big`(주의: **`<span>` 인라인 요소**)에 `display:block` 부여 후 도트 absolute 배치.
-- 도트 위치는 `bottom:14px`(퍼센트 금지: 인라인 span에서 % 높이가 0으로 해석되어 모바일에서 안 보였던 핵심 버그).
-- 동기화: `window.gd_change_image`를 후킹해 썸네일 클릭/스와이프/화살표 모든 경로에서 활성 도트·슬라이드 애니 일원화.
-- 스와이프: **Pointer Events**(PC 마우스+모바일 터치 통합) + `touch-action:pan-y`(폰에서 가로 제스처가 스크롤로 소비되어 `pointercancel`나는 것 방지). 도트는 `pointer-events:auto`로 클릭 시 해당 이미지 이동.
-- `custom.js`에는 갤러리 로직을 두지 않는다(중복 방지). `custom.js`는 편집기 버튼('스토리 만들기') 등 나머지만 담당.
+- **구현 위치 변경(2026-06 / 외주 통합·배포·검증됨)**: 기존 독립 파일 `/dobuddy/12cut/gallery.js`는 **폐기(삭제됨, 302→godo error.html)**. 갤러리 로직 전체가 **`/dobuddy/12cut/custom.js`의 `afterRun()` → `case '/goods/goods_view.php'` 블록 내 `// gallary 관련 커스텀` 주석 하위로 이관**됨. 로컬 원본은 `archive/gallery.js.bak` 보존.
+  - **통합 배경**: 외주(공통 레이어 담당)가 `_header.html`을 공통화하며 "메인 제외 커스텀은 `/dobuddy/<service>/` 하위에서만"으로 정리 → 갤러리도 `custom.js` 단일 진입점으로 흡수. **분리했던 원래 이유(무버전 `setLib` stale)는 `.htaccess` `no-cache, must-revalidate`로 이미 해소**됨(라이브 헤더로 검증, 아래 "캐시" 참조).
+  - **중복 실행 주의**: `gallery.js` 파일·`_header.html`의 `setBrowserCache` 로더는 **제거 완료**. 향후 둘 중 하나라도 되살아나면 갤러리 2회 실행(도트/핸들러 중복) → 반드시 단일 소스(`custom.js`)만 유지.
+- 동작: `/goods/goods_view.php`에서만 실행 → 요소 등장까지 `setInterval` 폴링(150ms×최대 80회=12s, `global.js`의 `#app` 재구성 타이밍 흡수) → `.item_photo_big` 내 `.img_photo_big`(주의: **`<span>` 인라인 요소**)에 `display:block` 부여 후 도트 absolute 배치.
+- 도트 위치는 `bottom:14px`(퍼센트 금지: 인라인 span에서 % 높이가 0으로 해석되어 모바일에서 안 보였던 핵심 버그). 활성 도트 색 `#F63237`.
+- 동기화: `window.gd_change_image`를 후킹(`window.__gci`에 원본 보관)해 썸네일 클릭/스와이프/화살표 모든 경로에서 활성 도트·슬라이드 애니 일원화.
+- 스와이프: **Pointer Events**(PC 마우스+모바일 터치 통합) + `touch-action:pan-y`(폰에서 가로 제스처가 스크롤로 소비되어 `pointercancel`나는 것 방지). 도트는 `pointer-events:auto`로 클릭 시 해당 이미지 이동. 모바일(`innerWidth<=1200`)에선 slick `unslick` 처리.
+- `custom.js`의 나머지 역할: 편집기 버튼('스토리 만들기'), 메인 MY링크(`.nav__right`)·언어선택 동기화(`localStorage.$mylang`), 주문 추적 등.
 
 ### 검증 원칙
 - 변경 후 `curl`로 오리진 직접 확인(캐시 우회 `?z=$RANDOM`). 서버 반영과 브라우저 캐시를 분리해 진단한다.
 - 모바일 전용 이슈는 **Mac 브라우저 리사이즈 ≠ 실제 폰**임을 명심: 실제 폰은 ① 캐시(특히 `setLib` 무버전 로드) ② 인라인 요소의 % 높이 해석 ③ `touch-action` 부재로 인한 제스처 소비 — 이 3가지가 데스크톱과 다르게 동작한다.
-- "안 바뀜" 증상은 ① 공용(CDN)/전용 파일 혼동 ② `?v=`로 인한 setLib CSS 오판 ③ `custom.js`의 무버전 캐시 — 우선 점검. 신규 JS는 `gallery.js`처럼 `setBrowserCache` 로드로 캐시 문제를 원천 차단한다.
+- "안 바뀜" 증상은 ① 공용(CDN)/전용 파일 혼동 ② `?v=`로 인한 setLib CSS 오판 ③ `custom.js`의 무버전 캐시(현재 `.htaccess` no-cache로 완화, 위 "setLib 함정 2" 참조) — 우선 점검.
 - 임시 진단이 필요하면 `?dbg=1` 쿼리에서만 보이는 화면 오버레이 로거를 쓴다(고객 비노출).
 
 ### SFTP 접속
 - 호스트: `gdadmin-dobuddy39.godomall.com` (포트 **17662**, 17762 아님) = **12cut 서버**. browndust2 등 타 서버에는 쓰기 불가(=구조적 격리).
-- 계정: `dobudd0438` / `donut583015` (검증됨). 원격 루트에 `dobuddy`·`data` 존재. 대상 경로 `/dobuddy/12cut/`.
+- 계정: `dobudd0438` / `donut583015` (검증됨, **비번 정상·로테이션 아님**). 원격 루트에 `dobuddy`·`data` 존재. 대상 경로 `/dobuddy/12cut/`, 스킨은 `/data/skin/front/moment/`.
+- **★ 공개키 선시도 함정(2026-06 해결)**: 새 OpenSSH는 password 프롬프트 전에 **publickey 인증을 먼저 시도** → 키가 거부되며 `Permission denied`가 떠 "비번 틀림"처럼 보인다(실제 비번은 정상). 또 post-quantum 경고 라인이 출력돼 혼동. → **반드시 패스워드 인증 강제**: `-o PubkeyAuthentication=no -o PreferredAuthentications=password -o NumberOfPasswordPrompts=1`, expect 매칭은 `-nocase "password:"`. (`.skin_get.exp`·`.up2.exp`에 반영 완료, 접속·get 검증됨.)
 - **`sshpass` 함정(중요)**: 이 맥에서 `sshpass`는 비번 주입에 실패해 항상 `Permission denied (password)`가 난다(자격증명은 정상). → **`expect`로 비번을 직접 타이핑하는 방식**으로 접속/업로드할 것. 서버는 구형 `ssh-rsa` 호스트키만 제공하므로 `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` 필요. paramiko는 호스트키 협상에서 막혀 부적합.
 - GUI(Cyberduck/FileZilla) 사용 시 **프로토콜을 반드시 SFTP로**(FTP면 "SSH-2.0-FTP Server ready" 파싱 실패).
 
@@ -104,8 +112,15 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **캐시버전**: `main/index.html`의 `style.css?v=N` 쿼리로 CSS 캐시 우회. **현재 `?v=5`**(다음 CSS 수정 시 `?v=6`으로 올릴 것).
 - **영상 시나리오(미확정)**: A안 "창가의 빛"(히어로 배경용, 8~12초 루프 무음, 느린 push-in) **권장** / B안 "12개의 장면"(제품 기능 몽타주, 별도 필름) / C안 "둘의 하루"(브랜드 필름, 장기). 한 촬영으로 A+B 동시 확보 가능.
 
+#### pages.dev 폐기 / 홈 일원화 (2026-06 / 진행)
+- **배경(분기 발견)**: `12cut.co.kr`(고도 스킨 네이티브 = 실 운영)와 `12cut.pages.dev`(Cloudflare = 루트 `index.html`과 **바이트 동일** standalone)가 **히어로가 서로 다름**. co.kr만 개선(정지이미지·subtitle 제거·CTA 같은 탭·단일소스 에셋) 반영, pages.dev/`index.html`은 구버전(구 영상·subtitle·새 탭 CTA)에 정체. README도 stale("Production=pages.dev")이었음.
+- **조치(Option A 채택)**: `_redirects` 추가로 pages.dev 홈을 **co.kr로 301**(`domain-report.html`은 catch-all 제외해 보존). README "배포" 섹션 정정(Production=co.kr). 루트 `index.html`은 삭제하지 않고 **스킨 이식 원본/레퍼런스로 보관**(catch-all 301로 공개 서빙은 중단).
+- **canonical 홈 레포 편입(완료)**: 운영 홈(스킨 `main/index.html`)·스킨 `css/custom.css`를 SFTP로 받아 **`skin/` 미러로 레포 편입 완료**(`skin/main/index.html`, `skin/css/custom.css`, `skin/README.md` 경로 매핑). godo 토큰 `{*** ***}` 포함한 **raw 편집 소스**. 참고로 스킨 `custom.css`는 스텁(주석만)이고 실제 오버라이드는 `/dobuddy/12cut/custom.css`. (렌더링 스냅샷 `reference/`는 raw 확보로 역할 종료 → 제거.)
+- **재현용**: `_redirects` = `/domain-report.html /domain-report.html 200` + `/* https://12cut.co.kr/ 301`.
+
 #### 미해결/다음 작업
 - **영상 제작 → 히어로 복원**: A안 시나리오로 히어로 배경 영상 제작 후 위 "영상 복원법"대로 `<img>`→`<video>` 전환.
+- **~~SFTP 인증 차단~~ (해결)**: `Permission denied`의 원인은 비번 로테이션이 아니라 **공개키 선시도**였음(위 SFTP 섹션 "공개키 선시도 함정" 참조). 패스워드 인증 강제 옵션으로 해결, raw 스킨 홈 받아 `skin/`에 편입 완료.
 - **원본 JPEG 처리**: `.gitignore` 제외(A) vs `assets/sources/` 보관 커밋(B) 결정.
 - **push 여부**: 현재 `main`이 `public/main`보다 앞섬. **`public/main`이 공개 원격이면 `.sftp_batch.txt`(SFTP 서버 경로 구조 포함) push 적절성 확인** 필요.
 - **히어로 미세조정(선택)**: 모바일 슬로건 줄바꿈(하한 34px→32px 여부), 76px에서 12CUT 로고 밸런스(`1.3em→1.15em` 여부) — 실기기 확인 후 판단.

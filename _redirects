@@ -1,0 +1,4 @@
+# pages.dev 폐기: 실 운영 홈은 12cut.co.kr(고도 스킨 네이티브)로 일원화.
+# 내부 리포트(domain-report.html)는 pages.dev에서 계속 접근 가능하도록 catch-all에서 제외.
+/domain-report.html   /domain-report.html   200
+/*                    https://12cut.co.kr/   301

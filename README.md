@@ -16,8 +16,9 @@
 
 ## 배포
 
-- **Production**: [12cut.pages.dev](https://12cut.pages.dev) (Cloudflare Pages, `main`/연결 브랜치 커넥트 규칙에 따름)
-- **내부 리포트 URL**: `/domain-report.html`
+- **Production(실 운영)**: [12cut.co.kr](https://12cut.co.kr) — 고도몰 스킨(`moment`)에 랜딩을 네이티브 이식한 홈. 자세한 구조는 `AGENTS.md` 참고.
+- **`12cut.pages.dev`(폐기)**: 과거 standalone 랜딩(루트 `index.html`)을 서빙하던 Cloudflare Pages. 단일소스 전환 후 **co.kr로 301 리다이렉트**(`_redirects`). 루트 `index.html`은 스킨 이식 원본/레퍼런스로만 보관.
+- **내부 리포트 URL**: `/domain-report.html` (pages.dev에서 유지, `_redirects` catch-all 제외)
 
 ## 로컬 미리보기
 
