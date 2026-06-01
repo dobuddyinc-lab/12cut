@@ -1,26 +1,8 @@
 const custom={
   isReserve:gno=>(ui.gdEtc[gno]?.catecd||'').indexOf('001004')>-1,
   main:({parseList,lang,setGdEtc,setPrice,setGoodsList})=>{
-    if(location.search.includes('dev=1')) return wrap.innerHTML=`<iframe src="/dobuddy/12cut/12cutEditor.html" style="position:fixed;inset:0;width:100%;height:100%;border:none"></iframe>`;
-    document.body.style.opacity=0;
-    wrap.innerHTML=`<iframe style="position:fixed;inset:0;width:100%;height:100%;border:none"></iframe>`;
-    const w=wrap.firstChild.contentWindow, d=w.document, q=q=>[].slice.call(d.querySelectorAll(q));
-    fetch('https://12cut.pages.dev/').then(r=>r.text().then(r=>{
-      d.open();
-      d.write(r.replace('<head>',`<head><base href=https://12cut.pages.dev/ >`));
-      d.close();
-      w.onload=_=>{
-        document.body.style.opacity=1;
-        q(`[data-lang="${localStorage.$mylang||navigator.language.slice(0,2)}"]`)[0].click();
-        const setLink=_=>q('[href*="/12cut_editor/"]').forEach((e,i)=>{
-          e.removeAttribute('target');
-          e.href=`javascript:`;
-          e.onclick=_=>parent.location='/goods/goods_view.php?goodsNo=1000000000';
-        });
-        setLink();
-        q('[data-lang]').forEach((e,i)=>e.addEventListener('click',_=>{setLink();localStorage.$mylang=['en','ko','ja','zh'][i]}));
-      }
-    }));
+    // 네이티브 홈: main/index.html이 랜딩을 직접 렌더(iframe 미사용). dev=1은 편집기 미리보기 유지.
+    if(location.search.includes('dev=1')) return wrap.innerHTML=`<iframe src="/dobuddy/12cut/12cutEditor.html" style="position:fixed;inset:0;width:100%;height:100%;border:none;z-index:2147483646"></iframe>`;
   },
   beforeRun:_=>{
   },

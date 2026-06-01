@@ -1,5 +1,12 @@
 .bd2-logo{filter:brightness(0);height:34px;margin-top:1.3em}
 
+/* 홈(body-index): 네이티브 랜딩 이식. 고도 헤더/푸터/사이드/위치바 비표시 + 컨테이너 폭 제약 해제(랜딩이 풀폭 렌더) */
+.body-index{opacity:1!important}
+.body-index #header_warp,.body-index #footer_wrap,.body-index .location_wrap,.body-index .side_cont,.body-index #foot-bar{display:none!important}
+/* global.js가 body 최상단에 prependTo로 붙이는 공용 공지 마퀴(.fade-in.marquee) — 12cut 전 페이지 비표시(랜딩 .examples__marquee와 무관) */
+body>.marquee{display:none!important}
+.body-index #wrap,.body-index .top_area,.body-index #container,.body-index #contents,.body-index .sub_content,.body-index .content_box{display:block!important;max-width:none!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;float:none!important;background:none!important}
+
 #foot-bar{display:none!important}
 @media screen and (max-width: 850px){#header .header_top{height:56px}.stick .bd2-logo{margin-top:1.35em}}
 @media screen and (min-width: 851px){.stick .bd2-logo{margin-top:6.2em}}

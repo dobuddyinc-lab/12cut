@@ -31,3 +31,6 @@ scripts/
 .env
 .env.local
 .env.*.local
+
+# SFTP/expect scripts (비밀번호 평문 포함 — 절대 커밋 금지)
+*.exp

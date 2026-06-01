@@ -65,7 +65,39 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - 임시 진단이 필요하면 `?dbg=1` 쿼리에서만 보이는 화면 오버레이 로거를 쓴다(고객 비노출).
 
 ### SFTP 접속
-- 호스트: `gdadmin-dobuddy39.godomall.com` (포트 17662) = **12cut 서버**. browndust2 등 타 서버에는 쓰기 불가(=구조적 격리).
+- 호스트: `gdadmin-dobuddy39.godomall.com` (포트 **17662**, 17762 아님) = **12cut 서버**. browndust2 등 타 서버에는 쓰기 불가(=구조적 격리).
+- 계정: `dobudd0438` / `donut583015` (검증됨). 원격 루트에 `dobuddy`·`data` 존재. 대상 경로 `/dobuddy/12cut/`.
+- **`sshpass` 함정(중요)**: 이 맥에서 `sshpass`는 비번 주입에 실패해 항상 `Permission denied (password)`가 난다(자격증명은 정상). → **`expect`로 비번을 직접 타이핑하는 방식**으로 접속/업로드할 것. 서버는 구형 `ssh-rsa` 호스트키만 제공하므로 `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` 필요. paramiko는 호스트키 협상에서 막혀 부적합.
+- GUI(Cyberduck/FileZilla) 사용 시 **프로토콜을 반드시 SFTP로**(FTP면 "SSH-2.0-FTP Server ready" 파싱 실패).
+
+### 홈 = 네이티브 랜딩 이식 (iframe 폐기, 현행 구조 / 배포·검증됨)
+- **이전 구조(폐기)**: 홈을 `custom.js`가 iframe으로 랜딩(pages.dev)을 덮어씌움 → 헤더 깜박임·SEO 불가. iframe/스플래시(`iframe-ready`, `cut-splash-out`) 로직은 **전부 제거됨**.
+- **현행 구조(B′ 단일소스화 완료 / 배포·검증됨)**: 랜딩 `<body>` 마크업을 **고도 스킨 `/data/skin/front/moment/main/index.html`** 에 직접 이식(고도 템플릿 토큰으로 래핑). **에셋은 자사 인프라로 전환 완료 → `pages.dev` 의존 0**: ① 이미지·CSS·OG는 **고도 스킨 경로 `/data/skin/front/moment/img/home/...`**, ② 영상은 **`https://img.12cut.net/12cut_prod/`**(nginx, Range 206 지원). `custom.js` main()은 홈에서 **iframe 미주입**, `dev=1`일 때만 편집기 미리보기 iframe 유지.
+  - *(히스토리)* 이전엔 Option B-2 하이브리드 = 마크업은 스킨, 에셋은 `https://12cut.pages.dev/`(외부 Cloudflare)였음. 아래 "단일소스 전환 완료" 참조.
+- **`custom.css`의 홈(`.body-index`) 오버라이드**: 고도 `#header_warp`·`#footer_wrap`·`.location_wrap`·`.side_cont`·`#foot-bar` 숨김 + `#wrap/#container/#contents/.sub_content/.content_box` 폭·여백·float 해제(랜딩 풀폭 렌더).
+
+#### 홈 네이티브 이식의 핵심 함정 3개 (반드시 숙지)
+1. **`.sub_content{display:none}` 함정 (블랭크 화면 주범)**: `global.css`에 `.sub_content{display:none}`이 있고, `global.js`는 `if(!ui.myCustom)$('.sub_content').show()`로만 해제. **12cut은 `ui.myCustom`이 truthy** → `.sub_content`가 영구 숨김 → 그 안에 이식한 랜딩 전체가 안 보여 "아무것도 안 뜸". → `custom.css`에서 `.body-index #contents,.body-index .sub_content{display:block!important}`로 **강제 노출**해야 함.
+2. **공용 마퀴 함정 (헤더 위 띠)**: `global.js`가 `ui.gdEtc.settings.marquee[lang]`이 있으면 jquery.marquee로 `<div class='fade-in marquee'>…</div>`를 만들어 **`prependTo('body')`** → body 최상단(=`#header_warp`보다 바깥)에 붙음. 그래서 헤더를 숨겨도 띠가 위에 남음. → **`body>.marquee{display:none!important}`**(custom.css, 12cut 전 페이지)로 숨김. 랜딩의 `.examples__marquee`(필름릴)와는 **클래스가 달라 무관**.
+3. **`body{opacity:0}` 함정**: 고도 기본 `main/index.html` 템플릿엔 인라인 `body{opacity:0;transition}`이 있어 JS가 1로 돌려줘야 보임. 네이티브 이식본에선 이 인라인을 제거하되, 안전망으로 `custom.css`에 `.body-index{opacity:1!important}` 둠.
+
+#### 홈→상품 전환 매끄러움 (배포·검증됨)
+- **CTA는 같은 탭 이동**: 히어로/Pricing CTA에서 `target="_blank"` 제거. 새 탭이면 빈 흰 탭이 먼저 뜬 뒤 고도가 헤더 재구성하며 깜박임 → 같은 탭이면 브라우저 paint-holding으로 흰 깜박임 최소화. (이전 iframe 땐 `parent.location=`이라 같은 탭이었음 → 동작 복원)
+- **히어로 영상 로드 전 배경**: `<video>`의 `poster`(제품 스틸)를 제거 → 로드 전엔 `.hero{background:var(--black)}` 검정 배경만 잠깐 보이고 영상 시작(poster 프레이밍이 영상과 달라 늘어나 보이던 문제 해소). FAQ 영상 poster는 유지.
+
+#### main/index.html 수정 워크플로
+- 라이브 스킨 파일을 직접 `expect`+`sftp get`으로 받아(`/data/skin/front/moment/main/index.html`) `/tmp`에서 편집 후 `put`. 스킨 템플릿은 컴파일 캐시로 반영 ~20초.
+- **백업**: 원본 홈 템플릿은 `/tmp/skin_main_index.html`(롤백 시 iframe 구조 복구 가능).
+
+#### 단일소스 전환 완료 (2026-06 / 배포·검증됨)
+- **결과**: 라이브 홈(`12cut.co.kr`)의 `pages.dev` 참조 **24 → 0**. 외부 Cloudflare 의존 완전 제거, 전부 자사 인프라.
+- **핵심 발견(경로 파이프라인 차이)**: `/dobuddy/12cut/`는 **신규 파일/디렉터리 동기화 30분+ 지연**이라 단일소스화를 막던 병목이었음. 반면 **고도 표준 스킨 경로 `/data/skin/front/moment/img/home/`는 신규 파일·디렉터리(`img/home/`)도 origin·CDN 즉시 200** 서빙. → 정적 에셋(이미지·CSS·OG)은 스킨 경로로, **영상은 `img.12cut.net`으로 분리**.
+- **`img.12cut.net` = 통합 미디어 서버(nginx)**: `api.php`(주문 추적, `custom.js`에서 호출) **+ 이미지/영상 호스팅 겸용** 서버임(이름이 `img`이나 API도 받음, 혼동 주의). 영상은 `/12cut_prod/`에 위치(`hero.mp4`, `prod.mp4`). 헤더에 `Cache-Control` 명시는 없으나 **미디어 캐시 30일**(개발자 확인).
+- **영상 캐시 정책 = 파일명 버전(Option A 채택)**: 캐시 30일이라 같은 파일명 덮어쓰면 최대 한 달 stale. → **교체 시 파일명에 버전 부여**(`hero.mp4`→`hero-v2.mp4`). 개발자가 업로드 후, `main/index.html`의 `<source src>` 한 줄만 수정해 반영. (배너관리 연동(B안)은 히어로 배경 영상의 `autoplay muted loop playsinline` 속성 보장 불확실로 보류.)
+- **치환 규칙(재현용)**: `main/index.html`에서 `https://12cut.pages.dev/assets/videos/hero-bg.mp4`→`https://img.12cut.net/12cut_prod/hero.mp4`, `.../product-exploded.mp4`→`.../prod.mp4`, 나머지 `https://12cut.pages.dev/`→`/data/skin/front/moment/img/home/`. 업로드 배치 원본은 `.sftp_batch.txt`.
+
+#### 미해결/다음 작업
+- **git 커밋**: `gallery.js`(신규), `custom.css`/`custom.js`/`.htaccess`/`AGENTS.md` 변경 스냅샷 미커밋.
 
 ### 브랜드
 - 브랜드 액센트 컬러: `#F63237` (CTA, 활성 인디케이터 등 강조 요소에 사용)
