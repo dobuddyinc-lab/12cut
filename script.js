@@ -613,18 +613,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== PRODUCT IMAGE VIEWER =====
 
     const colorMap = [
-        { label: 'white', ko: '화이트', img: 'assets/images/12CUT VARIATION.3987.webp' },
-        { label: 'cream', ko: '크림', img: 'assets/images/12CUT VARIATION.3988.webp' },
-        { label: 'light blue', ko: '라이트 블루', img: 'assets/images/12CUT VARIATION.3989.webp' },
-        { label: 'green', ko: '그린', img: 'assets/images/12CUT VARIATION.3991.webp' },
-        { label: 'red', ko: '레드', img: 'assets/images/12CUT VARIATION.3990.webp' },
-        { label: 'dark gray', ko: '다크 그레이', img: 'assets/images/12CUT VARIATION.3992.webp' },
+        { label: 'white', ko: '화이트', file: '12CUT VARIATION.3987.webp' },
+        { label: 'cream', ko: '크림', file: '12CUT VARIATION.3988.webp' },
+        { label: 'light blue', ko: '라이트 블루', file: '12CUT VARIATION.3989.webp' },
+        { label: 'green', ko: '그린', file: '12CUT VARIATION.3991.webp' },
+        { label: 'red', ko: '레드', file: '12CUT VARIATION.3990.webp' },
+        { label: 'dark gray', ko: '다크 그레이', file: '12CUT VARIATION.3992.webp' },
     ];
 
     // ===== PRODUCT COLOR SELECTOR =====
     const colorBtns = document.querySelectorAll('.product__color');
     const productName = document.querySelector('.product__name');
     const renderImg = document.getElementById('product-render');
+
+    // 흰색 기본 이미지의 src에서 에셋 디렉터리를 추출한다.
+    // pages.dev(상대경로)와 고도몰 스킨(pages.dev 절대경로) 양쪽에서 동일하게 동작시키기 위함.
+    const initialSrc = renderImg ? renderImg.getAttribute('src') || '' : '';
+    const assetBase = initialSrc.replace(/[^/]*$/, '');
 
     colorBtns.forEach((btn, i) => {
         btn.addEventListener('click', () => {
@@ -639,7 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (renderImg && color) {
                 renderImg.style.opacity = '0';
                 setTimeout(() => {
-                    renderImg.src = color.img;
+                    renderImg.src = assetBase + color.file;
                     renderImg.alt = `12cut ${color.label}`;
                     renderImg.style.opacity = '1';
                 }, 150);
