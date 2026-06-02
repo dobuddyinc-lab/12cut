@@ -24,8 +24,16 @@ node_modules/
 # Backup originals (deleted)
 assets/images/originals/
 
-# Build scripts (not deployed)
-scripts/
+# Build scripts (대부분 미배포). 단 i18n 산출물/소스는 배포물(/dobuddy/files/)이라 추적.
+scripts/*
+!scripts/fill_i18n.py
+!scripts/i18n_base/
+!scripts/i18n_base/*
+!scripts/i18n_out/
+!scripts/i18n_out/*
+
+# 편집기 롤백 백업(라이브 원본 스냅샷) — 추적 불필요
+editor/*.bak
 
 # Env
 .env

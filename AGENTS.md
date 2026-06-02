@@ -112,19 +112,33 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **캐시버전**: `main/index.html`의 `style.css?v=N` 쿼리로 CSS 캐시 우회. **현재 `?v=5`**(다음 CSS 수정 시 `?v=6`으로 올릴 것).
 - **영상 시나리오(미확정)**: A안 "창가의 빛"(히어로 배경용, 8~12초 루프 무음, 느린 push-in) **권장** / B안 "12개의 장면"(제품 기능 몽타주, 별도 필름) / C안 "둘의 하루"(브랜드 필름, 장기). 한 촬영으로 A+B 동시 확보 가능.
 
-#### pages.dev 폐기 / 홈 일원화 (2026-06 / 진행)
+#### pages.dev 폐기 / 홈 일원화 (2026-06 / 배포·발효 완료)
 - **배경(분기 발견)**: `12cut.co.kr`(고도 스킨 네이티브 = 실 운영)와 `12cut.pages.dev`(Cloudflare = 루트 `index.html`과 **바이트 동일** standalone)가 **히어로가 서로 다름**. co.kr만 개선(정지이미지·subtitle 제거·CTA 같은 탭·단일소스 에셋) 반영, pages.dev/`index.html`은 구버전(구 영상·subtitle·새 탭 CTA)에 정체. README도 stale("Production=pages.dev")이었음.
-- **조치(Option A 채택)**: `_redirects` 추가로 pages.dev 홈을 **co.kr로 301**(`domain-report.html`은 catch-all 제외해 보존). README "배포" 섹션 정정(Production=co.kr). 루트 `index.html`은 삭제하지 않고 **스킨 이식 원본/레퍼런스로 보관**(catch-all 301로 공개 서빙은 중단).
+- **조치(Option A 채택·발효됨)**: `_redirects` 추가로 pages.dev 홈을 **co.kr로 301**(`domain-report.html`은 catch-all 제외해 보존). `public` 원격(`github.com/dobuddyinc-lab/12cut.git`) push → Cloudflare Pages 재배포 → **`12cut.pages.dev` → 301 → `12cut.co.kr` 실측 확인 완료**. README "배포" 섹션 정정(Production=co.kr). 루트 `index.html`은 삭제하지 않고 **스킨 이식 원본/레퍼런스로 보관**(히어로도 co.kr에 맞춰 정지이미지·subtitle 제거·같은 탭 CTA로 동기화). **완전 삭제 원하면 Cloudflare 대시보드 작업 필요(미실행).**
 - **canonical 홈 레포 편입(완료)**: 운영 홈(스킨 `main/index.html`)·스킨 `css/custom.css`를 SFTP로 받아 **`skin/` 미러로 레포 편입 완료**(`skin/main/index.html`, `skin/css/custom.css`, `skin/README.md` 경로 매핑). godo 토큰 `{*** ***}` 포함한 **raw 편집 소스**. 참고로 스킨 `custom.css`는 스텁(주석만)이고 실제 오버라이드는 `/dobuddy/12cut/custom.css`. (렌더링 스냅샷 `reference/`는 raw 확보로 역할 종료 → 제거.)
 - **재현용**: `_redirects` = `/domain-report.html /domain-report.html 200` + `/* https://12cut.co.kr/ 301`.
 
+#### 세션 기록 (2026-06-02 / 외주 라이브 반영분 동기화)
+- **외주 회신 반영 검토·동기화**: 외주가 ① `_header.html` 공통화 ② "메인 제외 커스텀은 `/dobuddy/<service>/` 하위에서만" 권고 ③ `gallery.js`를 `custom.js`로 통합 ④ 메인 MY링크·언어 동기화 추가 — 를 라이브에 반영함. 라이브 검증 후 **로컬을 라이브 기준으로 동기화**(아래).
+- **갤러리 통합 검증**: `custom.js`(7488B)에 갤러리 로직 100% 보존(도트 `bottom:14px`·Pointer Events·`gd_change_image` 후킹), `gallery.js` 삭제(302), `custom.js`는 `.htaccess` `no-cache`로 모바일 stale 해소(헤더 실측). 로컬 `gallery.js` → `archive/gallery.js.bak`.
+- **공유 자원 동기화 정밀검토 결과**: `custom.js`·`custom.css`·`style.css`는 로컬=라이브 **바이트 일치**. `script.js`(root)는 라이브 `/dobuddy/12cut/home/script.js`로 배포되는 소스 — 미사용 `hero_subtitle` i18n 키 4개 제거 후 **라이브에도 SFTP 업로드해 일치**(co.kr 홈엔 subtitle 요소 없음, 무해).
+- **경로 매핑 확정**: co.kr 홈은 `/data/skin/front/moment/img/home/style.css?v=5` + `/dobuddy/12cut/home/script.js?v=3` 참조. 로컬 root `style.css`/`script.js`가 이 경로들의 소스.
+- **git**: 2커밋 후 `public`에 push 완료 — `ffbe85b`(동기화/pages.dev 일원화/skin 편입), `1dad00b`(영상 프롬프트). `*.exp`(비번)·`.DS_Store` 등은 `.gitignore`로 제외, `.sftp_batch.txt`는 서버 경로만(비번 없음)이라 push 허용.
+
+#### 세션 기록 (2026-06-02 / 다국어 사전 + 스토리 편집기 다국어화)
+- **고도 시스템 UI 사전 채움**: 라이브 `/dobuddy/files/{en,ja,zh}.html`(고도 `$t()` 사전, JSON)을 SFTP로 받아 `scripts/fill_i18n.py`로 빈 슬롯만 채움. **Class A(기능성 UI)만** 채우고 **Class B(BD2 캐릭터 고유명: 프로즌퀸·스트레인저 바니 등)·손상행은 `SKIP`**(12cut 소관 아님). en 85·ja 4·zh 96 채움 + 공통 신규키. 업로드·라이브 curl 검증 완료.
+- **★ 핵심 발견 — 단일 사전 공유**: 상품 페이지·고도 시스템 UI·**스토리 편집기(`/dobuddy/12cut/12cutEditor.html`)가 모두 `/dobuddy/files/{lang}.html` 하나의 사전을 공유**. 편집기는 `mounted()`에서 그 파일을 fetch → `$t(원문키)`·`[data-t]`/`<t>` innerHTML로 치환(키 없으면 한국어 폴백). lang은 `localStorage.$mylang||navigator.language`. → **편집기 번역 = 별도 시스템이 아니라 같은 사전에 원문키 추가**.
+- **편집기 다국어화 작업**: ① `fill_i18n.py`에 `EDITOR_KEYS` 39개(탭·단계안내문·툴팁·STORY GUIDE 캐러셀·버튼·알림 타이틀·알림/토스트 본문, `<b>`·`<br>`·😊·`$`토큰·스마트따옴표 EXACT) 추가 → 사전 **323→362키**. ② 편집기에서 `$t()` 미래핑이던 알림/토스트 본문 7개 + `onbeforeunload`를 `$t()`로 래핑(호출부에서 래핑, 템플릿은 기존 `$t` 유지). ③ 커버리지 검증 스크립트로 편집기 33개 키 **전 언어 PASS** 확인 후 SFTP 업로드(27375→27405B), 라이브 curl 검증.
+- **⚠️ 외주 공유 파일 직접 수정(중요)**: `12cutEditor.html`은 **외주와 공유되는 파일**. 이번에 라이브를 직접 받아 7개 래핑 후 재업로드함. → **외주에 변경분 통지 필요**(외주가 자기 사본으로 덮으면 래핑 소실 / 반대로 우리가 외주 신버전 못 받고 덮을 위험). **다음 편집기 수정 전 반드시 라이브를 `?z=$RANDOM`으로 재확인 후 편집**. 롤백 원본 = `editor/12cutEditor.live.bak`(추적 제외), 레포 canonical = `editor/12cutEditor.html`.
+- **잔여**: 편집기 `complete()` 내 `장바구니로 이동하시겠습니까?` 알림은 현재 호출 경로 없음(데드코드)이라 미래핑 잔존. `i18n_base/ko.html`은 `{}`(ko는 원문 폴백). `scripts/`는 원래 gitignore였으나 i18n 산출물(`fill_i18n.py`·`i18n_base`·`i18n_out`)은 배포물이라 **추적 전환**(.gitignore 예외).
+
 #### 미해결/다음 작업
-- **영상 제작 → 히어로 복원**: A안 시나리오로 히어로 배경 영상 제작 후 위 "영상 복원법"대로 `<img>`→`<video>` 전환.
-- **~~SFTP 인증 차단~~ (해결)**: `Permission denied`의 원인은 비번 로테이션이 아니라 **공개키 선시도**였음(위 SFTP 섹션 "공개키 선시도 함정" 참조). 패스워드 인증 강제 옵션으로 해결, raw 스킨 홈 받아 `skin/`에 편입 완료.
-- **원본 JPEG 처리**: `.gitignore` 제외(A) vs `assets/sources/` 보관 커밋(B) 결정.
-- **push 여부**: 현재 `main`이 `public/main`보다 앞섬. **`public/main`이 공개 원격이면 `.sftp_batch.txt`(SFTP 서버 경로 구조 포함) push 적절성 확인** 필요.
+- **편집기 다국어화 실기기 검증**: 구매 직전 핵심 전환 플로우. 실폰에서 en/ja/zh 전환 후 ① STORY GUIDE 캐러셀 ② 단계 전환 토스트 ③ 삭제 알림창 육안 확인 권장(데스크톱 리사이즈 ≠ 실폰).
+- **외주 조율**: `12cutEditor.html` 래핑 변경분을 외주에 통지(공유 파일 stale 방지).
+- **영상 제작 → 히어로 복원**: A안 시나리오로 히어로 배경 영상 제작 후 위 "영상 복원법"대로 `<img>`→`<video>` 전환. (영상 생성 프롬프트는 `MD/12CUT_*_prompt.json`·`_script.md`에 커밋됨.)
+- **원본 JPEG 처리(미결)**: `Delicate_..._202606011147.jpeg`(히어로 영상 원본 2.5MB) 여전히 미추적. `.gitignore` 제외(A) vs `assets/sources/` 보관 커밋(B) 결정 필요.
 - **히어로 미세조정(선택)**: 모바일 슬로건 줄바꿈(하한 34px→32px 여부), 76px에서 12CUT 로고 밸런스(`1.3em→1.15em` 여부) — 실기기 확인 후 판단.
-- **git 커밋**: `gallery.js`(신규), `.htaccess` 변경 스냅샷 미커밋(이번 세션의 `custom.css`/`custom.js`/`style.css`/`AGENTS.md`/히어로 이미지는 커밋 완료).
+- **SFTP 속도**: 이 서버는 연결 수립/종료가 느림(전송은 빠름). `.up2.exp`는 `expect eof`로 끝나 체감 느림 → 업로드 직후 eof 대기 없이 종료하도록 개선 여지.
 
 ### 브랜드
 - 브랜드 액센트 컬러: `#F63237` (CTA, 활성 인디케이터 등 강조 요소에 사용)

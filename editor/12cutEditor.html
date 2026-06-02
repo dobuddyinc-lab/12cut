@@ -1,0 +1,547 @@
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=yes">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/data/skin/front/moment/css/common/common.css?ts=1774479145">
+  <link rel="stylesheet" href="/dobuddy/12cut/editor.css">
+  <!-- <script src="https://cdn.jsdelivr.net/npm/fabric@6/dist/fabric.min.js"></script> -->
+  <script type="text/javascript" src="/data/skin/front/moment/js/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="/data/skin/front/moment/js/slider/slick/slick.js"></script>
+  <script type="text/javascript" src="https://www.donutframe.com/data/skin/front/moment/js/fabric/fabric.min.js"></script>
+  <script src="/dobuddy/vue.min.js"></script>
+</head>
+
+<body style="overflow:hidden" class="cut12">
+  <div @mousedown="closeTooltip()" @touchstart="closeTooltip()" id="app" :data-step="step"
+    style="padding:4em 0;text-align:center;overflow-y:auto;overflow-x:hidden;height:calc(100vh - 9em)">
+    <!-- 텝메뉴와 가이드문구 -->
+    <div v-if="step<3" class="tabs">
+      <div :class="step==0&&'active'" @click="step=0">
+        <t v-text="$t('12컷 선택')"></t> <small v-text="`(${imgs.length}/12)`"></small>
+      </div>
+      <div :class="step==1&&'active'" @click="if(step<1)nextStep();else step=1" data-t v-text="$t('순서 선택')"></div>
+      <div :class="step==2&&'active'" @click="if(step<2)nextStep();else step=2" data-t v-text="$t('트리밍')"></div>
+    </div>
+    <template v-if="step==0">
+      <div data-t v-if="imgs.length==0" class="tab-guide fade-in"
+        v-html="$t('<b>‘12컷 선택’ 버튼</b>을 누르고<br>빈 슬라이드에 12컷을 추가해주세요.😊')"></div>
+      <div data-t v-if="imgs.length>0 && imgs.length<12" class="tab-guide fade-in"
+        v-html="$t('<b>$</b>컷 추가됬어요.<br><b>$</b>컷 더 추가해주세요.😊',[imgs.length,12-imgs.length])"></div>
+      <div data-t v-if="imgs.length>11" class="tab-guide fade-in"
+        v-html="$t('<b>12</b>컷 선택이 완료되었어요.😊<br><b>“순서 선택” 버튼</b>을 눌러주세요.')"></div>
+    </template>
+    <div data-t v-if="step==1" class="tab-guide fade-in"
+      v-html="$t('슬라이드에 나오는 사진의 순서를 정해주세요. 😊<br>완료되면, <b>“트리밍” 버튼</b>을 눌러주세요.')"></div>
+    <div data-t v-if="step==2" class="tab-guide fade-in"
+      v-html="$t('필름 사이즈에 알맞게 트리밍하세요. 😊<br>완료되면, <b>“스토리 미리보기” 버튼</b>을 눌러주세요.')"></div>
+    <div data-t v-if="step>2" class="tab-guide fade-in"
+      v-html="$t('‘화면 터치’ 또는 ‘마우스 휠’로 회전시켜<br>사진과 스토리가  잘 적용되었는지 확인해 주세요 😊')">
+    </div>
+    <!-- 트리밍 @mousedown="fabric.setActiveObject(selImg)" -->
+    <div v-if="step==2">
+      <div class="trim-fabric fade-in">
+        <canvas ref="fabric"></canvas>
+      </div>
+    </div>
+    <!-- 파일업로드 부분: 드래그앤드롭, 멀티선택 지원 / 비어있으면 업로드 차있으면 순서선택 토글 -->
+    <div v-if="step<3" @dragover.prevent @drop.prevent="load($event.dataTransfer.files)" class="imgs fade-in">
+      <div :data-i="step==2 ? i : step==0 ? (imgs[i-1] ? 'X' : undefined) : (cuts.indexOf(imgs[i-1])+1 || '')"
+        v-for="i of 12" class="load" @click="sel(i-1)">
+        <img v-if="step==2" :class="i-1==selIdx&&'active'" :style="{opacity:imgs[i-1]?1:0}"
+          :src="cuts[i-1].cut||cuts[i-1].src">
+        <img v-else :style="{opacity:imgs[i-1]?1:0}" @load="checkImg($event.target, i-1)"
+          :src="imgs[i-1]&&imgs[i-1].src">
+      </div>
+      <div v-if="step==1" class="btns"><a data-t @click="cuts=[]" style="width:80%;margin-top:1em"
+          v-text="$t('사진 순서 초기화')"></a></div>
+      <input ref="file" @change="load($event.target.files)" type="file" multiple accept="image/*"
+        style="height:0;opacity:0">
+    </div>
+    <!-- 미리보기 -->
+    <div v-if="step==3" @click="preview()" @touchmove="preview()" @mousewheel="preview()"
+      :class="['fade-in',isFull&&'full']" style="padding-top:10vh">
+      <div ref="preview" class="preview">
+        <div class="cut" :data-i="i" v-for="i of 12" :key="i" :style="{transform:`rotate(${30*(i-1)}deg)`}">
+          <img ref="cut" :src="cuts[i-1].cut">
+        </div>
+      </div>
+      <img v-if="!isFull" style="margin-top:42vw;width:15vw" src="imgs/heart.png">
+    </div>
+    <!-- 타이틀바 -->
+    <div
+      style="background:#fff;padding:0 1em;position:fixed;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:center">
+      <a @click="window.parent.closeEditor()"><i style="font-size:120%" class="bi bi-x-lg"></i></a>
+      <h3 @dblclick="window.localStorage.removeItem('12cut_guide');alert('ok')" data-t v-text="$t('스토리만들기')"></h3>
+      <div>
+        <!-- <span style="font-size:120%;color:var(--primary)">{{step==0?Math.min(12,cuts.length+1):selIdx}}</span>/12 -->
+      </div>
+    </div>
+    <!-- 하단버튼 -->
+    <div class="btns foot" style="z-index:1">
+      <a data-t v-if="!isFull" @click="if(step<1){step=0;imgs=[];cuts=[]}else step--" v-text="$t(step>2 ?
+        '트리밍':['처음부터다시','12컷 선택','순서선택'][step])"></a>
+      <a data-t v-if="!isFull" :disabled="(step==0&&imgs.length<12)||(step>0&&cuts.length<12)" @click="nextStep()"
+        class="primary" v-text="$t(step>2 ? '스토리 저장하기':['순서선택','트리밍','스토리 미리보기'][step])"></a>
+      <a v-if="isFull" style="width:80%" @click="isFull=false" class="primary" v-text="$t('닫기')"></a>
+    </div>
+    <canvas ref="canvas" style="display:none"></canvas>
+    <div v-if="alertData.html" class="alert fade-in">
+      <div>
+        <h2 data-t class="title" style="margin-top:0" v-text="$t(alertData.title)"></h2>
+        <div data-t style="color:#999;margin-bottom:1.5em" v-html="alertData.html"></div>
+        <div class="btns">
+          <a data-t v-if="alertData.confirm" @click="alertData.resolve()" v-text="$t('취소')"></a>
+          <a data-t v-if="alertData.okTitle" @click="alertData.resolve(1)" class="primary" v-text="$t(alertData.okTitle||'확인')"></a>
+        </div>
+      </div>
+    </div>
+    <div data-t v-if="tooltipText" ref="tooltip" :style="tooltipPos" class="tooltip-bubble fade-in"
+      @click="tooltipText=''" v-html="$t(tooltipText)">
+    </div>
+    <div data-t v-if="toastHtml" class="toast alert fade-out" @click="toastHtml=''" v-html="toastHtml"></div>
+    <div data-t v-if="isLandscape" class="toast alert" v-html="$t('세로방향으로<br>이용해주세요')"></div>
+  </div>
+  <div class="guide fade-in">
+    <div class="guide-content">
+      <div class="guide-bar">
+        <div>
+          <img style="height:1em" src="imgs/12cut.png">
+          <img style="height:.6em;margin:0 0 .15em .5em" src="imgs/guide.png">
+        </div>
+        <i class="spin bi bi-hypnotize"></i>
+      </div>
+      <div class="carusel">
+        <div>
+          <h3 data-t>1단계: 12장 선택하기</h3>
+          <p data-t>'슬라이드 섬네일'을 클릭하시고<br>사진을 선택해 주세요.<br><br>나누고 간직할 이야기들을<br>당신만의 스토리로 만들어 보세요.</p>
+        </div>
+        <div>
+          <h3 data-t>2단계: 순서 선택하기</h3>
+          <p data-t>슬라이드에 나오는<br>사진의 순서를 정해주세요.<br><br>시간 순이 아니어도 괜찮아요.<br>감정의 흐름으로 연결해보세요.</p>
+        </div>
+        <div>
+          <h3 data-t>3단계: 사진 트리밍하기</h3>
+          <p data-t>더 멋진 스토리를 위해서<br>이야기의 한 장면들을<br>완벽하게 트리밍하세요.<br><br>줌과 회전으로 중요한 순간을<br>강조해 보세요.</p>
+        </div>
+      </div>
+    </div>
+    <div
+      style="margin-top:auto;display:flex;justify-content:space-between;align-items:center;color:#fff;padding:0.5em 1em">
+      <span onclick="hideSlick(true)"><i style="font-size:120%;margin-right:10px" class="bi bi-check-circle"></i>
+        <t>다시 보지 않기</t>
+      </span>
+      <i onclick="hideSlick()" class="bi bi-x-lg"></i>
+    </div>
+  </div>
+</body>
+
+<script>
+  window.$lang = {};// 다국어 처리용
+  function $t(txt, params) {
+    if (!txt) return txt;
+    txt = $lang[txt] || txt;
+    // $t("$와 $님께",["A","B"]) => "A와 B님께" 로 치환합니다.
+    if (Array.isArray(params)) for (const p of params) txt = txt.replace('$', p);
+    return txt;
+  };
+  const clickSound = new Audio('/dobuddy/12cut/imgs/go.snd');
+  // 일반페이지의 다국어 공통스크립트
+  // fetch(`/editor/${navigator.language}.html`).then(r => r.text().then(r => {
+  //   localStorage.$lang = r; $lang = JSON.parse(r);
+  // $('[t,data-t]').each((_, el) => {
+  //   const t = el.dataset.t || el.innerHTML.trim();
+  //   el.innerHTML = $lang[t] || t;
+  // });
+  // }));
+  function hideSlick(save) {
+    if (save) localStorage.setItem('12cut_guide', 1);
+    $('.carusel').slick('unslick');
+    $('.guide>div:first-child').css({ height: 0 });
+    $('.guide').css({ opacity: 0 });
+    setTimeout(() => $('.guide').remove(), 500);
+    if (!isTest) $vm.tooltip('.load', '클릭하면 이미지를 선택할 수 있어요');
+  };
+  $(() => {
+    $('.carusel:not(.slick-initialized)').slick({ dots: true, arrows: false });
+    setTimeout(() => { if (localStorage.getItem('12cut_guide')) hideSlick(); }, 500);
+    $(window).on("resize", () => $vm.isLandscape = innerHeight < 430);
+  });
+  fabric.Object.prototype.setControlsVisibility({
+    mb: false,
+    ml: false,
+    mt: false,
+    mr: false
+  });
+  fabric.Object.prototype.set({
+    snapAngle: 5, //5씩 회전
+    transparentCorners: false,
+    cornerColor: "rgba(255,0,0,0.6)",
+    // cornerStrokeColor: 'none',
+    borderColor: "rgba(255,0,0,0.6)",
+    borderScaleFactor: 2,
+    cornerSize: 15,
+    touchCornerSize: 150,
+    // padding: 10,
+    // cornerStyle: "circle"
+  });
+  const rotateImg = new Image();
+  rotateImg.onload = _ => fabric.Object.prototype.controls.mtr = new fabric.Control({
+    x: 0, y: -0.5, offsetY: -40, // 객체와 간격 조정
+    actionHandler: function(eventData, transform, x, y) {
+        transform.originX = transform.originY = 'center';
+        return fabric.controlsUtils.rotationWithSnapping(eventData, transform, x, y);
+    },
+    render: function(ctx, left, top, styleOverride, fabricObject) {
+      // 캔버스에 이미지 그리기 (rotateImg는 사전에 로드된 이미지 객체)
+      ctx.save();
+      ctx.translate(left, top);
+      ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+      ctx.drawImage(rotateImg, -13, -13, 26, 26);
+      ctx.restore();
+    }
+  });
+  rotateImg.src = '/dobuddy/12cut/imgs/rotate.png';
+
+  let toastTimer, tooltipTimer, isTest = location.hostname == '127.0.0.1' || parent.location.search.includes('dev=1');
+  const CUT_WIDTH = 847, CUT_HEIGHT = 739, CUT_MIN_PIXEL = 847;
+  window.onbeforeunload = () => $t('편집중인 스토리가 삭제됩니다.');
+  window.$vm = new Vue({
+    el: '#app',
+    data: {
+      window, isLandscape: false,
+      alertData: { html: '' }, tooltipText: '', tooltipPos: {}, toastHtml: '',
+      cuts: [], // {src:원본, cut:트리밍, fabric:트리밍편집}
+      imgs: [], // cuts 순서이전의 원본 레퍼런스
+      fabric: null,
+      step: 0,
+      selIdx: 0, selImg:null, isFull: false,
+    },
+    // computed: { isLandscape() { return window.innerHeight < 430 } },
+    methods: {
+      closeTooltip() {
+        if (this.tooltipText == '') return;
+        this.$refs.tooltip.style.opacity = 0;
+        setTimeout(() => {
+          // if (this.tooltipText == '레드 포인트를 움직이면<br>줌/회전을 할 수 있어요')
+          //   setTimeout(() => this.tooltip({ top: '20em', left: 'calc(50vw - 64px)' }, '드래그하면 회전할 수 있어요'), 500);
+          this.$refs.tooltip.style.opacity = 1;
+          this.tooltipText = '';
+        }, 500);
+      },
+      async tooltip(selector, text) {
+        // clearTimeout(tooltipTimer);
+        if (this.tooltipText) {
+          this.tooltipText = '';
+          await this.$nextTick();
+        }
+        this.tooltipText = text;
+        if (typeof selector == 'string') {
+          const el = document.querySelector(selector);
+          if (!el) return;
+          const { x, y, width, height } = el.getBoundingClientRect();
+          this.tooltipPos = { left: Math.max(5, x + width / 2 - 60) + 'px', top: (y + height + 10) + 'px' };
+          // console.log({ x, y, width, height }, this.tooltipPos.left);
+        }
+        else this.tooltipPos = selector;
+        // tooltipTimer = setTimeout(() => this.tooltipText = '', 3000);
+      },
+      async toast(html) {
+        if (this.toastHtml) {
+          clearTimeout(toastTimer);
+          this.toastHtml = '';
+          await this.$nextTick();
+        }
+        this.toastHtml = html;
+        toastTimer = setTimeout(() => this.toastHtml = '', 3000);
+      },
+      alert(html, { title, okTitle, confirm } = {}) {
+        if (!html) return this.alertData.html = '';
+        return new Promise(res => {
+          this.alertData.resolve = ok => {
+            this.alertData.html = '';
+            res(ok);
+          }
+          this.alertData.html = html;
+          this.alertData.title = title ?? '알림';
+          this.alertData.okTitle = okTitle ?? '확인';
+          this.alertData.confirm = confirm;
+        });
+      },
+      // 드래그앤드롭이나 파일일선택창으로 멀티선택된 파일 읽기
+      async load(files) {
+        if (this.step > 0) return;
+        this.alert(`<img id=loading style=height:7em src=/dobuddy/12cut/imgs/loading.gif>`,{title:'',okTitle:''});
+        try {
+          for (let file of files) {
+            if (file.type.startsWith('image/') && this.imgs.length < 12) this.imgs.push({
+              src: await new Promise(res => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                  if (this.imgs.length < 1) this.tooltip('.load', '클릭하면 이미지를 삭제할 수 있어요');
+                  res(e.target.result);
+                }
+                reader.readAsDataURL(file);
+              })
+            });
+          }
+        } catch (e) { console.error('load', e) }
+        this.alert();
+      },
+      // 이미지 로딩시 사이즈등을 체크하여 알림창
+      checkImg(el, i) {
+        const img = this.imgs[i];
+        if (!img) return;
+        if (el.naturalWidth < CUT_MIN_PIXEL || el.naturalHeight < CUT_MIN_PIXEL) {
+          this.alert($t('$px 미만인 이미지는 화질열화로 사용하실 수 없습니다.', [CUT_MIN_PIXEL]));
+          this.imgs.splice(this.imgs.indexOf(img), 1);
+        }
+      },
+      // 비어있으면 업로드 차있으면 순서선택 토글
+      async sel(i) {
+        this.selIdx = i;
+        if (this.step == 2) {
+          this.fabric.remove(...this.fabric.getObjects());
+          let img = await new Promise(res => fabric.Image.fromURL(this.cuts[i].src, img => res(img)));
+          let { width: w, height: h } = this.fabric;
+          const xywh = this.cuts[this.selIdx].fabric;
+          if (xywh) img.set(xywh);
+          else {
+            const zoom = this.fabric.getZoom();
+            if (img.height * 1.146 > img.width) {
+              img.scaleToWidth(w/zoom/1.7);
+              img.left = w/zoom*0.205;
+              img.top = (h/zoom-img.height*img.scaleY)/2
+            }
+            else {
+              img.scaleToHeight(h/zoom/2);
+              img.top = h/zoom/4;
+              img.left = (w/zoom-img.width*img.scaleX)/2
+            }
+          }
+          this.fabric.add(img);
+          this.fabric.setActiveObject(img);
+          this.selImg=img;
+          return;
+        }
+        const img = this.imgs[i];
+        if (!img) return this.$refs.file.click();
+        else if (this.step == 0) {
+          if (!(await this.alert($t('사진을 삭제하시겠습니까?'), { title: '삭제하기', okTitle: '삭제', confirm: true }))) return;
+          this.imgs.splice(i, 1);
+        }
+        i = this.cuts.indexOf(img);
+        if (i > -1) this.cuts.splice(i, 1);
+        else this.cuts.push(img);
+      },
+      // 트리밍 후 중앙부로 크롭 (편집기를 거치지 않은 케이스는 cover)
+      cropCut(src, fromFabric) {
+        return new Promise(res => {
+          const canvas = this.$refs.canvas;
+          canvas.width = CUT_WIDTH;
+          canvas.height = CUT_HEIGHT;
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          img.onload = () => {
+            const w = img.naturalWidth, h = img.naturalHeight;
+            if (fromFabric) {
+              const { left, top, width, height, scaleX, scaleY, angle } = this.fabric.getObjects()[0];
+              this.cuts[this.selIdx].fabric = { left, top, width, height, scaleX, scaleY, angle };
+              // ctx.drawImage(img, w * .2, h * .2114, w * .6, h * .5772, 0, 0, CUT_WIDTH, CUT_HEIGHT);
+              ctx.drawImage(img, w * .235, h * .2484, w * .53, h * .5032, 0, 0, CUT_WIDTH, CUT_HEIGHT);
+            }
+            else {
+              ctx.clearRect(0, 0, CUT_WIDTH, CUT_HEIGHT);
+              const scale = Math.min(w / CUT_WIDTH, h / CUT_HEIGHT);
+              ctx.drawImage(img, 0, 0, w, h, (CUT_WIDTH - w / scale) / 2, (CUT_HEIGHT - h / scale) / 2, w / scale, h / scale);
+            }
+            res(canvas.toDataURL());
+          }
+          img.crossOrigin = 'Anonymous';
+          img.src = src;
+        });
+      },
+      // 하단의 다음단계버튼 처리
+      async nextStep() {
+        // 테스트용 임시
+        // if (this.cuts.length == 0) this.cuts = [...this.imgs];
+        // 일반적인 다음단계진행
+        if (this.step == 2 && !(await this.alert($t('사진 트리밍 완료하셨나요?'), { title: '스토리 미리보기', okTitle: '확인', confirm: true }))) return;
+        else if (this.step < 3) this.step++;
+        // 최종 합쳐진이미지 생성
+        else {
+          this.alert(`<img id=loading style=height:7em src=/dobuddy/12cut/imgs/loading.gif>`,{title:'',okTitle:''});
+          try{await this.save();this.alert()}catch(e){console.log(e);this.alert($t('저장에 실패했습니다.'))}
+        }
+      },
+      async save() {
+        const canvas = this.$refs.canvas, toBlob = _=>new Promise(res=>canvas.toBlob(res,'image/png'));
+        // 저장용
+        // canvas.width = CUT_WIDTH * 4;
+        // canvas.height = CUT_HEIGHT * 3;
+        // let ctx = canvas.getContext('2d'), i = 0;
+        // for (const img of this.$refs.cut)
+        //   ctx.drawImage(img, (i % 4) * CUT_WIDTH, Math.floor(i++ / 4) * CUT_HEIGHT, CUT_WIDTH, CUT_HEIGHT);
+        // await this.alert(`<img style="width:100%" src="${canvas.toDataURL('image/png')}">`, { title: `저장용 (${CUT_WIDTH * 4}x${CUT_HEIGHT * 3})` });
+
+        // 인쇄용 (5000x5000)
+        w = 5000;
+        canvas.width = w;
+        canvas.height = w;
+        ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, w);
+        for (const img of this.$refs.cut) {
+          ctx.drawImage(img, w / 2 - CUT_WIDTH / 2, w * 0.03, CUT_WIDTH, CUT_HEIGHT);
+          ctx.translate(w / 2, w / 2);
+          ctx.rotate(Math.PI / 180 * 30);
+          ctx.translate(-w / 2, -w / 2);
+        }
+        await new Promise(res => {
+          const bg = new Image();
+          bg.onload = () => res(ctx.drawImage(bg, 0, 0));
+          bg.src = 'imgs/bg.png';
+        });
+        ctx.textAlign = "center";
+        ctx.font = "390px verdana, sans-serif";
+        const dt = new Date();
+        ctx.fillText(`${(dt.getFullYear() + '').slice(-2)}${('0' + (dt.getMonth() + 1)).slice(-2)}${('0' + dt.getDate()).slice(-2)}`, w / 2, w * 0.43);
+        // ctx.fillText('0910000002', w / 2, w * 0.63);
+        // await this.alert(`<img style="width:100%" src="${canvas.toDataURL('image/png')}">`, { title: '인쇄용 (5000x5000)' });
+        const printPng = await toBlob();
+
+        // 썸네일용 (200x200)
+        w = 200;
+        canvas.width = w;
+        canvas.height = w;
+        ctx = canvas.getContext('2d');
+        await new Promise(res => {
+          const bg = new Image();
+          bg.onload = () => res(ctx.drawImage(bg, w / 9, w / 5, w * .672, w * 3 / 5));
+          bg.src = 'imgs/prod.png';
+        });
+        const cw = CUT_WIDTH / 25, ch = CUT_HEIGHT / 25
+        for (const img of this.$refs.cut) {
+          ctx.drawImage(img, w / 2 - cw / 2, w * 0.03, cw, ch);
+          ctx.translate(w / 2, w / 2);
+          ctx.rotate(Math.PI / 180 * 30);
+          ctx.translate(-w / 2, -w / 2);
+        }
+        // const thumbPng = await (await fetch(canvas.toDataURL('image/png'))).blob();
+        const thumbPng = await toBlob();
+        
+let gno='1000000000',price='13500',body=`mode=cartIn&scmNo=1&cartMode=d&set_goods_price=${price}&set_goods_fixedPrice=15000.00&set_goods_mileage=0&set_goods_stock=%E2%88%9E&set_coupon_dc_price=${price}.00&set_goods_total_price=0&set_option_price=0&set_option_text_price=0&set_add_goods_price=0&set_total_price=${price}&mileageFl=c&mileageGoods=0.00&mileageGoodsUnit=percent&goodsDiscountFl=y&goodsDiscount=35.00&goodsDiscountUnit=percent&taxFreeFl=t&taxPercent=10.0&scmNo=1&brandCd=001&cateCd=001&optionFl=n&goodsDeliveryFl=y&sameGoodsDeliveryFl=n&useBundleGoods=1&acePid=&event_id=&deliveryMethodFl=delivery&deliveryCollectFl=pre&goodsNo%5B%5D=${gno}&optionSno%5B%5D=1&goodsPriceSum%5B%5D=${price}&addGoodsPriceSum%5B%5D=0&couponApplyNo%5B%5D=&couponSalePriceSum%5B%5D=&couponAddPriceSum%5B%5D=&goodsCnt%5B%5D=1&optionPriceSum%5B%5D=0&option_price_0=0.00`;
+const cartId = ((await(await fetch('/order/cart_ps.php',{body,headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'},method:'post'})).json()).goods||[])[0];
+if(!cartId) return this.$alert($t('카트저장에 실패하였습니다.'));
+sessionStorage.setItem('cartSno',cartId);
+body = new FormData();
+body.append('type', '12cut_upload');
+body.append('folder', '12cut_usr/cart/');
+body.append('thumbPng', thumbPng, cartId+'_thumb.png');
+body.append('printPng', printPng, cartId+'.png');
+await fetch('https://img.12cut.net/api.php',{method:'POST',body});
+window.onbeforeunload = null;
+parent.location='/order/order.php';
+      },
+      async complete(thumbPng) {
+        // 서브밋을 위한 알림제거
+        window.onbeforeunload = null;
+        if (await this.alert(`<img style="max-width:100%" src="${thumbPng}"><br><br>장바구니로 이동하시겠습니까?`, { title: '저장이 완료되었습니다.', okTitle: '장바구니 이동', confirm: true }))
+          return parent.location = '/order/cart.php';
+        parent.document.querySelector('.editer_form').style.display = '';
+        location.reload();
+      },
+      preview() {
+        if (!this.isFull) { this.isFull = true; this.selIdx += 12 }
+        clickSound.currentTime = 0; // 연속 클릭시 끊김 방지
+        clickSound.play();
+        this.$refs.preview.style.transform = `rotate(-${(this.selIdx++) * 30}deg)`;
+      },
+      async setStep(to, from) {
+        if (to > 0 && this.imgs.length < 12) {
+          this.step = 0;
+          return this.toast($t('12컷 선택<br>완료해주세요'));
+        }
+        else if (to > 1 && this.cuts.length < 12) {
+          this.step = from;
+          return this.toast($t('순서 선택<br>완료해주세요'));
+        }
+        if (this.step == 2) {
+          // if (!this.fabric) {
+          await this.$nextTick();
+          const el = this.$refs.fabric.parentNode;
+          // el.firstChild.style.zoom = el.offsetWidth / CUT_WIDTH;
+          this.$refs.fabric.width = el.offsetWidth;
+          this.$refs.fabric.height = el.offsetHeight;
+          this.fabric = new fabric.Canvas(this.$refs.fabric);
+          this.fabric.setZoom(el.offsetWidth / CUT_WIDTH);
+          // let mask;
+          // fabric.Image.fromURL('imgs/fabricBg.svg', img => {
+          //   mask = img;
+          //   mask.scaleToWidth(CUT_WIDTH - 10);
+          //   this.fabric.setOverlayImage(mask, this.fabric.renderAll.bind(this.fabric));
+          // });
+          let mask = new fabric.Rect({
+            left: CUT_WIDTH / 4 - 30,
+            top: CUT_WIDTH / 4,
+            width: CUT_WIDTH / 2 + 60,
+            height: CUT_WIDTH / 2,
+            rx: CUT_WIDTH / 15,
+            ry: CUT_WIDTH / 15,
+            // objectCaching: false,
+          });
+          this.fabric.clipPath = mask;
+          this.fabric.controlsAboveOverlay = true;
+          this.fabric.selection = false;
+          this.fabric.on('object:modified', async () => {
+            // mask.opacity = 0;
+            this.fabric.clipPath = null;
+            const src = this.fabric.toDataURL();
+            // mask.opacity = 1;
+            this.fabric.clipPath = mask;
+            this.cuts[this.selIdx].cut = await this.cropCut(src, true);
+            this.$forceUpdate();
+          });
+          this.sel(0);
+          this.tooltip({ top: '24em', left: 'calc(75vw - 64px)' }, '레드 포인트를 움직이면<br>줌/회전을 할 수 있어요');
+        }
+        else if (this.step == 3) {
+          for (const cut of this.cuts) if (!cut.cut) cut.cut = await this.cropCut(cut.src);
+          setTimeout(() => this.tooltip({ top: 'calc(7.5em + 30vw)', left: 'calc(50vw - 72px)' }, '클릭하면 이미지를 확대할 수 있어요'), 500);
+        }
+        await this.$nextTick();
+        if (this.step == 1) {
+          if (this.cuts.length < 1) this.tooltip('.load', '클릭해서 사진의 순서를 정해주세요');
+        }
+      },
+      $t,
+    },
+    mounted() {
+      // if (localStorage.$lang) $lang = JSON.parse(localStorage.$lang);
+      // else
+      const lang = localStorage.$mylang || navigator.language.slice(0, 2);
+      fetch(`/dobuddy/files/${lang}.html`).then(r => r.text().then(r => {
+        localStorage.$lang = r; window.$lang = this.$rang = JSON.parse(r);
+        $('t,[data-t]').each((_, el) => {
+          const t = el.dataset.t || el.innerHTML.trim();
+          // console.log(t)
+          el.innerHTML = $lang[t] || t;
+        });
+      }));
+      document.title = this.$t('스토리만들기');
+      this.isLandscape = innerHeight < 430;
+      if (!isTest) return;
+      Array(12).fill().forEach((_, i) => this.cuts[i] = { src:`imgs/bg${i%2}.png` });
+      this.imgs = [...this.cuts];
+      setTimeout(() => this.step = 2, 100);
+      setTimeout(() => this.step = 3, 500);
+    },
+    watch: {
+      step: 'setStep'
+    },
+  });
+</script>
+
+</html>
