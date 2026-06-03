@@ -132,13 +132,69 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **⚠️ 외주 공유 파일 직접 수정(중요)**: `12cutEditor.html`은 **외주와 공유되는 파일**. 이번에 라이브를 직접 받아 7개 래핑 후 재업로드함. → **외주에 변경분 통지 필요**(외주가 자기 사본으로 덮으면 래핑 소실 / 반대로 우리가 외주 신버전 못 받고 덮을 위험). **다음 편집기 수정 전 반드시 라이브를 `?z=$RANDOM`으로 재확인 후 편집**. 롤백 원본 = `editor/12cutEditor.live.bak`(추적 제외), 레포 canonical = `editor/12cutEditor.html`.
 - **잔여**: 편집기 `complete()` 내 `장바구니로 이동하시겠습니까?` 알림은 현재 호출 경로 없음(데드코드)이라 미래핑 잔존. `i18n_base/ko.html`은 `{}`(ko는 원문 폴백). `scripts/`는 원래 gitignore였으나 i18n 산출물(`fill_i18n.py`·`i18n_base`·`i18n_out`)은 배포물이라 **추적 전환**(.gitignore 예외).
 
+#### 세션 기록 (2026-06-02 / 외주 협업구조 확정·편집기 재배포·공통페이지 스타일링 착수)
+- **외주 협업구조 협의(정경석 개발자)**:
+  - **저장소 통합**: 외주가 GitLab `gitlab.com/keepcool.kr/202507-dobudy-bd2`(**private, 우리 접근권 미보유**)로 통합 예정. 기존 방식은 FTP 반영분을 날짜순 수동 추출. → 처음엔 "대기" 요청했다가 **"FTP 바로 반영하면 제가 끌어와서 git도 반영하겠다"로 대기 해제**. = **우리는 기존 SFTP 배포 계속 가능, 외주가 FTP→git 흡수**.
+  - **구조 확정**: 고도몰(베이스) + `global.js`(공용 훅) + `/dobuddy/<service>/`(서비스 커스텀). 스킨은 **저장소상 공통 `/skin` + 사이트별 `/skin_main/<service>` 오버라이드**로 관리. **`/skin_main/12cut` → 배포 대상: `12cut.co.kr:/data/skin/front/moment/main`**. (홈을 스킨 main에 네이티브 이식한 건 **SEO·무깜박임** 때문 → `/dobuddy`(JS 주입) 회귀 대신 **스킨 사이트별 분기로 보존**, 외주 수락. 이름 `/main`→`/skin_main`으로 명확화.)
+  - **다국어**: "**site-dependent(라이브 기준)**" → 우리 사전 보존. 공통 사전 공유 + 사이트별 추가분만 분리는 **안정화 후** 진행(현재는 유지). Class A 공통 기여분 보존 재확인 = 그 분리 시점 체크포인트.
+  - **Tailwind 방법론**: "메인 이외 **대규모 신규** UI"에만 Tailwind(vsquare `/dobuddy/global-board.js` = **Play CDN**, page-gated[`bdId=suggest/Portfolio`], 고도 게시판 DOM scrape→재구성 패턴). **12cut은 소규모 보정 위주 → 당분간 바닐라 유지·Tailwind 보류**. (향후 적용 시 가드레일: 브랜드색 `#F63237`·`preflight:false`·prefix·`custom.js` 흡수. QA: vsquare본에 `console.log`·전 카드 동일 `aria-label` 잔존.)
+- **★ 운영 규칙 갱신 — 2트랙 배포(대기 해제됨)**: ① **12cut 전용(우리 소유: 홈/`skin_main`·에셋)** = **FTP 직접 배포 OK** → 외주가 git 흡수. ② **공유·외주 분기 파일(`custom.css`·`custom.js`·`12cutEditor.html`)** = **통째 덮기 금지, 라이브 pull→우리 델타만 머지→배포**. (실측: `custom.css` 라이브=외주본 **9,555B**[`:root`·`@font-face`×3·`.body-index`] vs 로컬 **2,421B**[`.body-main`] → 통째 올리면 폰트 정의 등 약 7KB가 12cut에서 소실. 타 서비스 영향과는 별개 축의 리스크.)
+- **편집기 덮어쓰기 사건 + 재배포(검증 완료)**: 라이브 편집기가 외주본(**25,714B·`$t(`22·onbeforeunload 미래핑·`'저장에 실패했습니다.'` 경로 부재**)으로 바뀌어 **우리 래핑 6~7곳 소실** 확인. 외주 승인하에 **우리 canonical(27,405B·`$t(`30) FTP 재업로드** → **`12cut.co.kr` 오리진 27,405B·`$t(`30·onbeforeunload `$t()` 반영 검증**. 편집기 진입 = `${location.origin}/dobuddy/12cut/12cutEditor.html` → **사용자는 12cut.co.kr 로드 = 복구됨**. `browndust2-goods.com` CDN 사본(25,714B)은 진입경로 아님·무영향·우리 쓰기권 밖. **외주본 백업 = `editor/12cutEditor.outsourced-20260602.bak`**. ⚠️ **외주 통지 필요**: 우리본(27,405)>외주본(25,714)이라 외주 의도 변경분이 덮였을 수 있음 → git 흡수 전 **diff 대조 요청**.
+- **신규 작업 착수 — 공통페이지 스타일링(진행 예정)**: 로그인·회원가입·장바구니·결제 등 공통페이지 스타일(폰트크기·좌우마진·여백·컬러) 보정. **위치 = `/dobuddy/12cut/custom.css`**(바닐라 = 소규모 보정 Option2). **라이브 base 위에 페이지 스코프 오버라이드만 추가**(고도 body 클래스 `.body-login`·`.body-join`·`.body-basket`·`.body-orderform` 등으로 `.body-index` 누수 방지). **디자인 소스 = 정리된 Figma(링크 미수신)**. 라이브 custom.css(9,555B)는 `/tmp/live_custom.css`로 받아뒀으나 재개 시 다시 받을 것(stale 가능).
+
+#### 세션 기록 (2026-06-03~04 / 로그인·약관 리디자인 + 전 페이지 폰트 시스템 구축)
+
+##### 로그인 페이지 리디자인 (`.body-login`) — 배포·검증됨
+- **ZIGZAG식 소셜-퍼스트 구조**: Google·Apple·Facebook 풀폭 버튼 + "12cut 아이디로 가입" 토글(ID/PW 패널) + 카카오·네이버 아이콘 행 + 디바이더.
+- **상단 캐릭터 히어로**: `lumi.mp4`(→`.m4v` 확장자 우회 업로드, 서버가 `.mp4` 차단) 로드. `login.html` 스킨에 `<video>` 삽입.
+- **CSS 핵심**: `custom.css`에 `.body-login` 스코프. 고도 데스크톱 member 박스 중화(`member_wrap/member_cont` border/padding/고정폭 리셋). CTA 비활성=`:has(:placeholder-shown)` CSS-only. 체크박스 커스텀(`#F63237`). `font-family`는 `inherit`로 body 레벨 언어 폰트 상속.
+- **SNS 아이콘 세로 정렬**: `common.css`의 `.member_sns_login>*{margin-top:12px}` → `margin-top:0!important` 리셋.
+- **Payco 제거**, Apple·Facebook은 고도 관리자에서 활성화 필요(미완).
+
+##### 약관동의 페이지 리디자인 (`.body-join-agreement`) — 배포·검증됨
+- **Figma Option A 구현**: 카드형 → 리스트형 전환. 헤드라인 "12cut 이용을 위한 / 약관에 동의해주세요." `$t()` 래핑(다국어). 아코디언 접힘(`.js_terms_view.open`). 하단 단일 "다음단계" 풀폭 버튼.
+- **"이전단계" → 로그인 이동**: `$('#btnPrevStep').off().on()` + CSS 숨김.
+- **"다음단계" 비활성화**: 필수 체크 전 회색(`btn--disabled`), `$(':checkbox.require')` change 이벤트로 실시간 토글.
+- **미체크 경고 메시지**: 고도 기본 아이콘(`icon_caution02.png` 깨짐) 제거 → `background:none` + 색 `#F63237` + `font-weight:500`.
+- **체크박스 스타일**: `label.check` + `label.check_s` 모두 커스텀(`#F63237`).
+- **Figma 미세조정**: 헤드라인 `#555555`, `(필수)` `#000/500`, 전체동의 `14px/500/#333`, 버튼 `font-weight:500`.
+
+##### 헤더 ← 화살표 수정 — 배포·검증됨
+- **원인**: `global.js`가 `.header_top`에 `data-h`를 `.member_tit>:first-child` 텍스트로 설정. 로그인 페이지는 `.member_tit` 요소 부재 → `data-h=""` (falsy) → 클릭 핸들러 무시. 약관 페이지는 `history.back()` 의존(직접 진입 시 무반응).
+- **해결**: `custom.js afterRun()`에서 `$('.header_top').attr('data-h', $t(title))` + `stopImmediatePropagation` + 명시 URL 이동(로그인→`/`, 약관→`/member/login.php`).
+
+##### 전 페이지 폰트 시스템 구축 — 배포·검증됨
+- **Pretendard Variable CDN**: `beforeRun()`에서 `<link>` 주입 → 전 페이지에서 true weight(400~900) 사용 가능. 기존 `Pretendard-Medium.woff`(500 only)의 faux-bold 문제 해소.
+- **언어별 디스플레이 폰트**:
+  - **en**: Nunito (Google Fonts)
+  - **ja**: Zen Maru Gothic (Google Fonts)
+  - **zh**: ZCOOL KuaiLe (Google Fonts)
+  - **ko**: Pretendard Variable (기본, 별도 디스플레이 폰트 없음)
+- **★ 핵심 발견 — `sel_lang` disabled 옵션 함정**: `global.js`가 `<select id=sel_lang>` 생성 시 en/ja/zh 옵션에 `disabled` 부여 → `sel_lang.value='en'` 시 `selectedIndex=-1` → `lang='ko'` 폴백 → `$('body').addClass('ko')`. `sel_lang`은 `beforeRun()` **이후에** 생성되므로 `beforeRun`에서 `removeAttr('disabled')` 불가. → **`afterRun()`에서 `$('body').removeClass('ko en ja zh').addClass(실제lang)` 교정**.
+- **★ 핵심 발견 — 폰트 파일 비동기 미로드**: `<link rel=stylesheet>` 방식은 비동기라 폰트 파일 다운로드 전 렌더됨 → **`<style>@import url(...)</style>` 방식으로 변경** = 스타일 파싱 시 동기적 폰트 CSS 로드 → 즉시 적용 확인.
+- **CSS `font-family:inherit` 전환**: 로그인·약관 페이지 11개 요소의 `font-family:Pretendard,sans-serif` → `inherit`로 교체. body 레벨 언어 폰트가 상속.
+- **CSS `body.en/ja/zh` 규칙**: `custom.css` 상단에 `body.en,body.en input,...{font-family:'Nunito',...!important}` (ja/zh 동일 패턴). 실제 렌더는 `afterRun`의 `<style>@import` 태그가 담당(최고 우선순위).
+
+##### i18n 사전 추가 (3개 언어)
+- `12cut 이용을 위한` / `약관에 동의해주세요.` / `12cut의 모든 약관을 확인하고 전체 동의합니다.` — en/ja/zh 추가. 사전 총 371키.
+- **사전 캐시 주의**: `localStorage.$lang`에 캐시됨. 새 키 추가 후 언어 전환 1회 필요(또는 `localStorage.removeItem('$lang')` 후 새로고침).
+
+##### 푸터 깨진 이미지 수정 — 배포됨
+- `global.js`가 삽입하는 `/dobuddy/imgs/arrow.svg` = 12cut 서버에 **404**. `foot_sns.png`도 12cut 미사용.
+- CSS로 `display:none!important` 처리(`.foot_cont img[src*="arrow.svg"],.foot_cont~img[src*="foot_sns"]`).
+
 #### 미해결/다음 작업
-- **편집기 다국어화 실기기 검증**: 구매 직전 핵심 전환 플로우. 실폰에서 en/ja/zh 전환 후 ① STORY GUIDE 캐러셀 ② 단계 전환 토스트 ③ 삭제 알림창 육안 확인 권장(데스크톱 리사이즈 ≠ 실폰).
-- **외주 조율**: `12cutEditor.html` 래핑 변경분을 외주에 통지(공유 파일 stale 방지).
-- **영상 제작 → 히어로 복원**: A안 시나리오로 히어로 배경 영상 제작 후 위 "영상 복원법"대로 `<img>`→`<video>` 전환. (영상 생성 프롬프트는 `MD/12CUT_*_prompt.json`·`_script.md`에 커밋됨.)
-- **원본 JPEG 처리(미결)**: `Delicate_..._202606011147.jpeg`(히어로 영상 원본 2.5MB) 여전히 미추적. `.gitignore` 제외(A) vs `assets/sources/` 보관 커밋(B) 결정 필요.
-- **히어로 미세조정(선택)**: 모바일 슬로건 줄바꿈(하한 34px→32px 여부), 76px에서 12CUT 로고 밸런스(`1.3em→1.15em` 여부) — 실기기 확인 후 판단.
-- **SFTP 속도**: 이 서버는 연결 수립/종료가 느림(전송은 빠름). `.up2.exp`는 `expect eof`로 끝나 체감 느림 → 업로드 직후 eof 대기 없이 종료하도록 개선 여지.
+- **Apple·Facebook 소셜 로그인 활성화**: 고도 관리자 > 회원 > SNS 로그인 설정에서 활성화 필요. 버튼 마크업·CSS는 준비됨.
+- **외주 통지(이번 세션 변경분)**: `custom.css`(19KB, 로그인·약관·폰트 추가)·`custom.js`(~10KB, 폰트·헤더·비활성화 추가)·i18n 사전 3개 변경 → 외주에 diff 공유 필요.
+- **외주 통지(편집기)**: 우리 재배포본(27,405B)이 외주 push본(25,714B)을 덮음 → **git 흡수 전 diff 대조 요청**(외주 의도 변경분 보호). 백업 `editor/12cutEditor.outsourced-20260602.bak`.
+- **공통페이지 스타일링 (장바구니·결제 등)**: Figma 디자인 기반. 현재 로그인·약관 완료. 다음 타겟: `.body-basket`·`.body-orderform` 등.
+- **GitLab 통합 접근권**: `keepcool.kr` 그룹 초대 필요(현재 private 접근 불가).
+- **i18n 분리 체크포인트**: 외주 안정화 후 공통/사이트별 분리 시 Class A 공통 기여분 확인.
+- **편집기 다국어화 실기기 검증**: 실폰 en/ja/zh 전환 후 ① STORY GUIDE 캐러셀 ② 단계 전환 토스트 ③ 삭제 알림창 육안 확인.
+- **영상 제작 → 히어로 복원**: A안 시나리오로 히어로 배경 영상 제작 후 `<img>`→`<video>` 전환. (프롬프트: `MD/12CUT_*_prompt.json`·`_script.md`.)
+- **원본 JPEG 처리(미결)**: `Delicate_..._202606011147.jpeg` 미추적. `.gitignore`(A) vs `assets/sources/`(B) 결정 필요.
+- **히어로 미세조정(선택)**: 모바일 슬로건 줄바꿈(34→32px), 76px 로고 밸런스(`1.3→1.15em`) — 실기기 후 판단.
+- **이번 세션 git 커밋**: `custom.css`·`custom.js` 변경분 커밋 미실행.
 
 ### 브랜드
 - 브랜드 액센트 컬러: `#F63237` (CTA, 활성 인디케이터 등 강조 요소에 사용)

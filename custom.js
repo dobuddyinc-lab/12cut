@@ -8,10 +8,29 @@ const custom={
     $('[data-lang]').each((i,e)=>e.addEventListener('click',_=>localStorage.$mylang=['en','ko','ja','zh'][i]));
   },
   beforeRun:_=>{
+    if(!document.querySelector('link[href*="pretendardvariable"]')){var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css';document.head.appendChild(l);}
   },
   afterRun:_=>{
+    $('a[href*="join_method"]').attr('href','/member/join_agreement.php?memberFl=personal');
     $('#sel_currency option,#sel_lang option').removeAttr('disabled');
+    var _cl=localStorage.$mylang||navigator.language.slice(0,2);$('body').removeClass('ko en ja zh').addClass(_cl);
+    var _ff={en:["'Nunito'",'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap'],ja:["'Zen Maru Gothic'",'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap'],zh:["'ZCOOL KuaiLe'",'https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap']}[_cl];
+    if(_ff){var _s=document.createElement('style');_s.textContent='@import url("'+_ff[1]+'");body,body *{font-family:'+_ff[0]+",'Pretendard Variable','Pretendard',sans-serif!important}";document.head.appendChild(_s);}
+    var _hdrBack={'/member/login.php':['로그인','/'],'/member/join_agreement.php':['회원가입','/member/login.php']}[location.pathname];
+    if(_hdrBack){$('.header_top').attr('data-h',$t(_hdrBack[0]));$('.header_top').off('click.hdr').on('click.hdr',function(e){if(this.dataset.h&&innerWidth<851&&e.offsetX<34){e.stopImmediatePropagation();location.href=_hdrBack[1];}});}
     switch(location.pathname){
+      case '/member/join_agreement.php':
+        setTimeout(()=>{
+          $('#btnPrevStep').off('click').on('click',function(e){e.preventDefault();location.href='/member/login.php';});
+          if(!$('.agree_headline').length){$('.join_agreement_cont').first().before('<h2 class="agree_headline">'+$t('12cut 이용을 위한')+'<br>'+$t('약관에 동의해주세요.')+'</h2>');}
+          $('.js_terms_view').each(function(){var $b=$(this);$b.find('.form_element').css('cursor','pointer').off('click.acc').on('click.acc',function(e){if($(e.target).closest('input,label,a').length)return;$b.toggleClass('open');});});
+          var _syncBtn=function(){var ok=$(':checkbox.require','#formTerms').length&&!$(':checkbox.require:not(:checked)','#formTerms').length;$('#btnNextStep').toggleClass('btn--disabled',!ok);};
+          $(':checkbox','#formTerms').on('change',_syncBtn);_syncBtn();
+        },300);
+        break;
+      case'/mypage/index.php':
+        $("body").removeClass("body-index");
+        break;
       case '/order/order.php':
         $('[name="bankSender"]').val($('[name="orderName"]').val());
         $('[name="bankAccount"]').val(1);
