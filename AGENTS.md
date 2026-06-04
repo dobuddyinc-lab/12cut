@@ -202,7 +202,34 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **GitLab push**: 미실행. 로컬·SFTP > GitLab main(바이트). 외주 MR/브랜치 합의 후 `dobuddy/12cut/`만 push.
 - **핸드오프 문서**: `MD/HANDOFF_office_20260604.md`.
 
+#### 세션 기록 (2026-06-05 / 회원가입 정보입력 `join.php` 리디자인)
+
+##### 구조 발견 — global.js가 폼을 재구성(스타일만 입히면 됨)
+- **body class = `body-member body-join`** (login=`body-login`, join_agreement=`body-join-agreement`와 별개 토큰 → `.body-join` 셀렉터는 약관 페이지에 누수 없음).
+- **`global.js`가 `/member/join.php`에서 `#formJoin`을 모바일 폼으로 재구성**: `$('#contents').hide()` 후 `#my_custom.w600` 생성 → `#formJoin` 이관 → `.f` 컨테이너에 `<b>라벨</b>+<input>+<small>힌트</small>` 패턴으로 필드 재배치. 필드 순서: 아이디(`#memId`)·비밀번호(`#newPassword`)·비밀번호확인(`[name=memPwRe]`,class `check-id`)·이름(`memNm`)·이메일(`#email`+메일수신 `.form_element`)·휴대폰(`#cellPhone`+SMS `.form_element`)·주소(`.address_postcode`+`.address_input`)·생일(`b.not-required`+`.member_warning`들). 끝에 `.btns`(취소/완료 primary).
+- **이메일 도메인 셀렉트·휴대폰 국가코드 셀렉트는 이관 안 됨**(global이 `#email`/`#cellPhone` 입력만 이동) → 단일 입력으로 렌더(글로벌향 OK).
+- **생일 함정**: `.member_birthday>*`로 이관된 게 `.f` 직계 `.member_warning` **4개**(빈 div 1 + `#birthYear`100px·`#birthMonth`80px·`#birthDay`80px, 각 인라인 width). 그냥 두면 붙어 보임 → **custom.js가 셀렉트 3개를 `.bday-row`(flex)로 `wrapAll`**, 빈 div는 `.f>.member_warning{display:none}`로 숨김.
+
+##### 적용 (Figma node `1032-3428` 기준 / 배포·검증됨)
+- **custom.css `.body-join`**: 필 인풋(`radius40`,`#FAFAFA`,포커스`#F63237`)·라벨(Bold14 `#333342`+`:not(.not-required)::after` 빨강 `*`)·힌트(10px `#C4C4C4`)·생일 셀렉트(`radius8`+커스텀 화살표)·주소찾기(빨강 아웃라인 필)·체크박스(`#F63237` 커스텀: 메일/SMS/양력/음력)·하단 **단일 풀폭 `확인`**(취소 숨김)·필드 그룹 간격 36px(체크박스 다음 라벨 24px)·**PC(≥851px) `#my_custom` padding-top:60px**(헤더 아래 간격).
+- **custom.js `case '/member/join.php'`**: 헤더 `data-h=$t('회원가입')`(번역)+`←`클릭→약관복귀, `.btns .primary` 텍스트 `$t('확인')`, 주소 placeholder 3종 `$t()`, 생일 `.bday-row` wrapAll, **아이디 한글 입력 안내**(`compositionstart`/`beforeinput`에서 비ASCII 감지 → `.join-id-warn` 2.5초 노출).
+
+##### 진단 도구 — puppeteer-core(기존 Chrome) 가입플로우 자동화
+- join.php는 직접 접근 시 `잘못된 경로` alert로 리다이렉트 → **약관동의 페이지에서 체크박스 전체 체크→다음** 으로 플로우 통과해야 렌더. `dev/diag_*.cjs`(puppeteer-core, `executablePath`=시스템 Chrome)로 자동 통과+DOM진단+스크린샷. `dev/`는 `package.json type:module`이라 **`.cjs` 확장자** 필수.
+- **검증 결과**: ① 아이디 "입력 안 됨"=버그 아님 — 고도 `gdMemberId` 필터가 **한글 제거**(`가나다`→`""`, `abc가나123`→`abc123`), 영문/숫자 정상(라이브 실측). ② 헤더 타이틀 번역 일 `会員登録`/중 `注册`/영 `Sign Up`/국 `회원가입` 실측. ③ 라벨·버튼·체크박스·대부분 placeholder 일/중/영 정상.
+
+##### ⚠️ 미완 — i18n 사전 4개 키 미업로드(서버 불안정)
+- **준비됨·미반영**: `우편번호`·`도로명 주소 검색`·`상세 주소를 입력해 주세요.`·`없이 입력하세요.`(휴대폰 placeholder) + `영문 소문자·숫자만 입력할 수 있어요`(아이디 안내) → en/ja/zh. **현재 일/중/영에서 해당 placeholder만 한국어 폴백**(기능 무관).
+- **업로드 차단 원인(2026-06-04 야간)**: godo SFTP(`gdadmin-dobuddy39:17662`)가 **인증 ~120초 지연 후 `Permission denied`** 또는 세션 중 `Received disconnect ... Application error`로 끊김. 정체 세션 강제종료가 fail2ban류 차단을 계속 리셋 → 악순환. **비번·코드 문제 아님**(custom.css·custom.js는 그 와중에 통과해 라이브 반영됨).
+- **남은 작업(서버 안정 후 1스텝)**: `i18n_pending/{en,ja,zh}.html` → `/dobuddy/files/{en,ja,zh}.html` 업로드만 하면 종료. (각 382키, 신규 키 검증 완료. `/tmp/dict_*.html`와 동일본을 레포에 보존.)
+- **검증 명령**: 업로드 후 `curl -s "https://12cut.co.kr/dobuddy/files/en.html?z=$RANDOM" | grep "Postal code"`로 반영 확인.
+
+##### 다른 창 작업 흔적 — `skin/mypage/index.html`(미커밋)
+- 다른 창에서 **마이페이지(`mypage/index.php`) 스킨**을 라이브에서 받아 `skin/mypage/index.html`로 미러링함(godo 토큰 raw: `진행 중인 주문`·`최근 본 상품` 등 주문 요약/최근주문/최근본상품 구조). `skin/main/index.html` 미러 패턴과 동일. **아직 디자인 적용 전 원본 스냅샷**으로 추정 → 향후 마이페이지 리디자인 base.
+
 #### 미해결/다음 작업
+- **★ i18n 사전 3종 업로드(최우선·1스텝)**: `i18n_pending/{en,ja,zh}.html` → `/dobuddy/files/`. 서버 안정 시 SFTP put만. (회원가입 placeholder 4개+아이디 안내 번역 반영.)
+- **마이페이지 리디자인(예정)**: `skin/mypage/index.html` 미러 확보됨. `.body-mypage` 스코프로 Figma 기반 스타일링 대기.
 - **Apple·Facebook 소셜 로그인 활성화**: 고도 관리자 > 회원 > SNS 로그인 설정에서 활성화 필요. 버튼 마크업·CSS는 준비됨.
 - **외주 통지(이번 세션 변경분)**: `custom.css`(19KB, 로그인·약관·폰트 추가)·`custom.js`(~10KB, 폰트·헤더·비활성화 추가)·i18n 사전 3개 변경 → 외주에 diff 공유 필요.
 - **외주 통지(편집기)**: 우리 재배포본(27,405B)이 외주 push본(25,714B)을 덮음 → **git 흡수 전 diff 대조 요청**(외주 의도 변경분 보호). 백업 `editor/12cutEditor.outsourced-20260602.bak`.

@@ -12,12 +12,13 @@ const custom={
   },
   afterRun:_=>{
     $('a[href*="join_method"]').attr('href','/member/join_agreement.php?memberFl=personal');
+    $('.top_member_box a[href*="order/cart.php"]').attr('href','/order/cart.php');
     $('#sel_currency option,#sel_lang option').removeAttr('disabled');
     var _cl=localStorage.$mylang||navigator.language.slice(0,2);$('body').removeClass('ko en ja zh').addClass(_cl);
     var _ff={en:["'Nunito'",'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap'],ja:["'Zen Maru Gothic'",'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap'],zh:["'ZCOOL KuaiLe'",'https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap']}[_cl];
     if(_ff){var _s=document.createElement('style');_s.textContent='@import url("'+_ff[1]+'");body,body *{font-family:'+_ff[0]+",'Pretendard Variable','Pretendard',sans-serif!important}";document.head.appendChild(_s);}
-    var _hdrBack={'/member/login.php':['로그인','/'],'/member/join_agreement.php':['회원가입','/member/login.php']}[location.pathname];
-    if(_hdrBack){$('.header_top').attr('data-h',$t(_hdrBack[0]));$('.header_top').off('click.hdr').on('click.hdr',function(e){if(this.dataset.h&&innerWidth<851&&e.offsetX<34){e.stopImmediatePropagation();location.href=_hdrBack[1];}});}
+    var _hdrBack={'/member/login.php':['로그인','/'],'/member/join_agreement.php':['회원가입','/member/login.php'],'/member/find_id.php':['아이디 찾기','/member/login.php'],'/member/find_password.php':['비밀번호 찾기','/member/login.php']}[location.pathname];
+    if(_hdrBack){$('.header_top').attr('data-h',$t(_hdrBack[0]));$('.header_top').off('click.hdr').on('click.hdr',function(e){if(this.dataset.h&&innerWidth<851&&e.offsetX<34&&!$(e.target).closest('a,button,input,select,label').length){e.stopImmediatePropagation();location.href=_hdrBack[1];}});}
     switch(location.pathname){
       case '/member/join_agreement.php':
         setTimeout(()=>{
@@ -28,6 +29,50 @@ const custom={
           $(':checkbox','#formTerms').on('change',_syncBtn);_syncBtn();
         },300);
         break;
+      case '/member/join.php':
+        setTimeout(()=>{
+          $('.header_top').attr('data-h',$t('회원가입'));
+          $('.header_top').off('click').on('click',function(e){if(this.dataset.h&&innerWidth<851&&e.offsetX<34&&!$(e.target).closest('a,button,input,select,label').length){e.preventDefault();location.href='/member/join_agreement.php?memberFl=personal';}});
+          $('#formJoin .f .btns .primary').text($t('확인'));
+          $('#formJoin .f input[name="zonecode"]').attr('placeholder',$t('우편번호'));
+          $('#formJoin .f input[name="address"]').attr('placeholder',$t('도로명 주소 검색'));
+          $('#formJoin .f input[name="addressSub"]').attr('placeholder',$t('상세 주소를 입력해 주세요.'));
+          var _bd=$('#formJoin .f>.member_warning').filter(function(){return $(this).find('select').length;});
+          if(_bd.length&&!_bd.parent().hasClass('bday-row'))_bd.wrapAll('<div class="bday-row"></div>');
+          var _id=$('#memId');
+          if(_id.length&&!_id.next('.join-id-warn').length){
+            var _w=$('<p class="join-id-warn"></p>').insertAfter(_id),_t;
+            var _show=function(){_w.text($t('영문 소문자·숫자만 입력할 수 있어요')).addClass('show');clearTimeout(_t);_t=setTimeout(function(){_w.removeClass('show');},2500);};
+            _id.on('compositionstart',_show);
+            _id.on('beforeinput',function(e){var d=(e.originalEvent||e).data;if(d&&/[^A-Za-z0-9]/.test(d))_show();});
+          }
+        },300);
+        break;
+      case '/member/find_id.php':{
+        let _ft=0,_fiv=setInterval(()=>{
+          if(++_ft>40){clearInterval(_fiv);return;}
+          if(!$('#userName').length)return;clearInterval(_fiv);
+          $('.btn_member_id').text($t('확인'));
+          if(!$('.find_lbl').length){
+            $('#userName').before('<label class="find_lbl" data-flbl="name">'+$t('이름')+' <i>*</i></label>');
+            $('#userCellPhoneNum').before('<label class="find_lbl" data-flbl="phone">'+$t('휴대폰번호')+' <i>*</i></label>');
+            $('#userEmail').before('<label class="find_lbl" data-flbl="email">'+$t('이메일')+' <i>*</i></label>');
+          }
+          var _sync=function(){var p=$('#findIdPhone').is(':checked');$('[data-flbl="phone"]').toggle(p);$('[data-flbl="email"]').toggle(!p);};
+          $('input[name="findIdFl"]').off('click.flbl').on('click.flbl',_sync);_sync();
+        },150);
+        break;}
+      case '/member/find_password.php':{
+        let _pt=0,_piv=setInterval(()=>{
+          if(++_pt>40){clearInterval(_piv);return;}
+          if(!$('#memberId').length)return;clearInterval(_piv);
+          $('.btn_member_next').text($t('확인'));
+          if(!$('.find_lbl').length){
+            $('#memberId').before('<label class="find_lbl">'+$t('아이디')+' <i>*</i></label>');
+            $('#memberName').before('<label class="find_lbl">'+$t('이름')+' <i>*</i></label>');
+          }
+        },150);
+        break;}
       case'/mypage/index.php':
         $("body").removeClass("body-index");
         break;

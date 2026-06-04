@@ -42,3 +42,17 @@ editor/*.bak
 
 # SFTP/expect scripts (비밀번호 평문 포함 — 절대 커밋 금지)
 *.exp
+
+# 진단 도구(puppeteer) — 루트 설치 부산물 & dev 스크립트(미배포)
+/package.json
+/package-lock.json
+.vite/
+dev/
+
+# 임시 스크래치/로그
+._*
+lc.txt
+
+# 대용량 미디어 소스(처리방침 미결 — 추적 보류)
+Delicate_*.jpeg
+assets/videos/*.mp4
