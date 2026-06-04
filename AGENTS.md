@@ -44,6 +44,18 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **`_header.html` 직접 수정 = 허용됨(사용자 확인)**: 12cut도 필요 시 `_header.html`을 직접 수정 가능. 단 **공통 파일이므로 타 서비스 영향 0** 보장이 전제(서비스 분기/조건 안에서만 변경). 가능하면 공통부 변경은 외주와 조율.
 - **stale 경고**: 외주가 공통/스킨/`custom.js`를 수정하면 **이 문서 서술이 즉시 stale**해질 수 있음 → 외주 변경 회신 수신 시 **`curl ?z=$RANDOM`으로 라이브를 우선 재확인**하고, 로컬 레포는 라이브 기준으로 **pull 후** 편집(로컬 구버전 업로드로 외주 작업 덮어쓰기 방지).
 
+### Git·배포 경로 (2026-06-04)
+| 경로 | 역할 | 비고 |
+|---|---|---|
+| **SFTP → `12cut.co.kr`** | **라이브 반영(실효)** | `/dobuddy/12cut/`, 스킨. Git과 무관. |
+| **GitLab `keepcool.kr/202507-dobudy-bd2`** | **SSOT(통합 repo·실경로)** | `dobuddy/12cut/custom.js`·`custom.css`·`12cutEditor.html` 존재. 로컬 remote `gitlab-bd2`. |
+| ~~`202503-dobudy-12cut`~~ | 구/스냅샷 repo | `12cut_editor/`·`skin/` 일부만. `custom.js` 없음. remote `gitlab`(레거시). |
+| **`public` → `dobuddyinc-lab/12cut`** | 우리 GitHub 백업·pages `_redirects` | `main` 추적. 외주 GitLab과 별도. |
+| ~~`devrepo` → `12cut-dev`~~ | **폐기** | 로컬 remote 제거됨. GitHub/CF `12cut-dev` 삭제는 대시보드 별도. |
+
+- **우리가 GitLab에 올리는 절차**: SSH 등록 완료(`@smiletube9`) → **`gitlab-bd2`**=`git@gitlab.com:keepcool.kr/202507-dobudy-bd2.git` → push 대상 **`dobuddy/12cut/`** → 브랜치/MR 외주 합의 후.
+- **회사 작업 핸드오프**: `MD/HANDOFF_office_20260604.md` (repo 구분·remote·SFTP·다음 push 절차).
+
 ### 로딩 체인 & 캐시 (중요)
 - `_header.html` → 공용 `global.js`(browndust2) → `alias` 판별 → `setLib('/dobuddy/12cut/custom.js')` → `custom`(main/beforeRun/afterRun) 정의
 - `custom.afterRun()`는 `global.js`의 `run()` 마지막에 호출됨 (DOM·`data-i` 세팅 완료 후)
@@ -134,7 +146,7 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 
 #### 세션 기록 (2026-06-02 / 외주 협업구조 확정·편집기 재배포·공통페이지 스타일링 착수)
 - **외주 협업구조 협의(정경석 개발자)**:
-  - **저장소 통합**: 외주가 GitLab `gitlab.com/keepcool.kr/202507-dobudy-bd2`(**private, 우리 접근권 미보유**)로 통합 예정. 기존 방식은 FTP 반영분을 날짜순 수동 추출. → 처음엔 "대기" 요청했다가 **"FTP 바로 반영하면 제가 끌어와서 git도 반영하겠다"로 대기 해제**. = **우리는 기존 SFTP 배포 계속 가능, 외주가 FTP→git 흡수**.
+  - **저장소 통합**: 외주 GitLab `gitlab.com/keepcool.kr/202503-dobudy-12cut`(**초대 완료**). Clone: `git@gitlab.com:keepcool.kr/202503-dobudy-12cut.git`. 기존 방식은 FTP 반영분을 날짜순 수동 추출. → 처음엔 "대기" 요청했다가 **"FTP 바로 반영하면 제가 끌어와서 git도 반영하겠다"로 대기 해제**. = **우리는 기존 SFTP 배포 계속 가능, 외주가 FTP→git 흡수**.
   - **구조 확정**: 고도몰(베이스) + `global.js`(공용 훅) + `/dobuddy/<service>/`(서비스 커스텀). 스킨은 **저장소상 공통 `/skin` + 사이트별 `/skin_main/<service>` 오버라이드**로 관리. **`/skin_main/12cut` → 배포 대상: `12cut.co.kr:/data/skin/front/moment/main`**. (홈을 스킨 main에 네이티브 이식한 건 **SEO·무깜박임** 때문 → `/dobuddy`(JS 주입) 회귀 대신 **스킨 사이트별 분기로 보존**, 외주 수락. 이름 `/main`→`/skin_main`으로 명확화.)
   - **다국어**: "**site-dependent(라이브 기준)**" → 우리 사전 보존. 공통 사전 공유 + 사이트별 추가분만 분리는 **안정화 후** 진행(현재는 유지). Class A 공통 기여분 보존 재확인 = 그 분리 시점 체크포인트.
   - **Tailwind 방법론**: "메인 이외 **대규모 신규** UI"에만 Tailwind(vsquare `/dobuddy/global-board.js` = **Play CDN**, page-gated[`bdId=suggest/Portfolio`], 고도 게시판 DOM scrape→재구성 패턴). **12cut은 소규모 보정 위주 → 당분간 바닐라 유지·Tailwind 보류**. (향후 적용 시 가드레일: 브랜드색 `#F63237`·`preflight:false`·prefix·`custom.js` 흡수. QA: vsquare본에 `console.log`·전 카드 동일 `aria-label` 잔존.)
@@ -183,18 +195,27 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - `global.js`가 삽입하는 `/dobuddy/imgs/arrow.svg` = 12cut 서버에 **404**. `foot_sns.png`도 12cut 미사용.
 - CSS로 `display:none!important` 처리(`.foot_cont img[src*="arrow.svg"],.foot_cont~img[src*="foot_sns"]`).
 
+##### GitLab SSOT 확정 (2026-06-04) — fetch 검증됨
+- **통합 repo**: `202507-dobudy-bd2` — `dobuddy/12cut/custom.js`·`custom.css`·`12cutEditor.html` 존재. 로컬 remote `gitlab-bd2`.
+- **구 repo `202503-dobudy-12cut`**: `custom.js` 없음 — remote `gitlab`은 레거시, push 금지.
+- **SSH**: GitLab `@smiletube9` 등록 완료. 회사 PC는 **별도 공개키 등록** 또는 동일 키 이전 필요.
+- **GitLab push**: 미실행. 로컬·SFTP > GitLab main(바이트). 외주 MR/브랜치 합의 후 `dobuddy/12cut/`만 push.
+- **핸드오프 문서**: `MD/HANDOFF_office_20260604.md`.
+
 #### 미해결/다음 작업
 - **Apple·Facebook 소셜 로그인 활성화**: 고도 관리자 > 회원 > SNS 로그인 설정에서 활성화 필요. 버튼 마크업·CSS는 준비됨.
 - **외주 통지(이번 세션 변경분)**: `custom.css`(19KB, 로그인·약관·폰트 추가)·`custom.js`(~10KB, 폰트·헤더·비활성화 추가)·i18n 사전 3개 변경 → 외주에 diff 공유 필요.
 - **외주 통지(편집기)**: 우리 재배포본(27,405B)이 외주 push본(25,714B)을 덮음 → **git 흡수 전 diff 대조 요청**(외주 의도 변경분 보호). 백업 `editor/12cutEditor.outsourced-20260602.bak`.
 - **공통페이지 스타일링 (장바구니·결제 등)**: Figma 디자인 기반. 현재 로그인·약관 완료. 다음 타겟: `.body-basket`·`.body-orderform` 등.
-- **GitLab 통합 접근권**: `keepcool.kr` 그룹 초대 필요(현재 private 접근 불가).
+- **GitLab push/MR(회사 재개)**: `202507-dobudy-bd2` / `dobuddy/12cut/` — 외주 브랜치 확인 후 push. 절차=`MD/HANDOFF_office_20260604.md`.
+- **회사 PC GitLab SSH**: 집과 다른 머신이면 SSH Keys에 **회사 공개키 추가**.
+- **`public` push**: `main` 2커밋 ahead + AGENTS/HANDOFF — 회사에서 `git pull`용.
 - **i18n 분리 체크포인트**: 외주 안정화 후 공통/사이트별 분리 시 Class A 공통 기여분 확인.
 - **편집기 다국어화 실기기 검증**: 실폰 en/ja/zh 전환 후 ① STORY GUIDE 캐러셀 ② 단계 전환 토스트 ③ 삭제 알림창 육안 확인.
 - **영상 제작 → 히어로 복원**: A안 시나리오로 히어로 배경 영상 제작 후 `<img>`→`<video>` 전환. (프롬프트: `MD/12CUT_*_prompt.json`·`_script.md`.)
 - **원본 JPEG 처리(미결)**: `Delicate_..._202606011147.jpeg` 미추적. `.gitignore`(A) vs `assets/sources/`(B) 결정 필요.
 - **히어로 미세조정(선택)**: 모바일 슬로건 줄바꿈(34→32px), 76px 로고 밸런스(`1.3→1.15em`) — 실기기 후 판단.
-- **이번 세션 git 커밋**: `custom.css`·`custom.js` 변경분 커밋 미실행.
+- **`public` push**: 로컬 `main`이 `public/main`보다 2커밋 ahead(`9ac9200` 등). GitHub 백업용 push 여부 결정.
 
 ### 브랜드
 - 브랜드 액센트 컬러: `#F63237` (CTA, 활성 인디케이터 등 강조 요소에 사용)
