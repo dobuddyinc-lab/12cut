@@ -68,6 +68,9 @@ body.zh,body.zh input,body.zh button,body.zh select,body.zh textarea{font-family
 /* global.js가 body 최상단에 prependTo로 붙이는 공용 공지 마퀴(.fade-in.marquee) — 12cut 전 페이지 비표시(랜딩 .examples__marquee와 무관) */
 body>.marquee{display:none!important}
 .cut-hide-notice-link{display:none!important}
+.cut-hide-wish-link{display:none!important}
+a.cut-hide-mypage-link,li.cut-hide-mypage-link,dd.cut-hide-mypage-link{display:none!important}
+.cut-hide-footer-link{display:none!important}
 .cut-kakao-inline{color:var(--cut-primary)!important;font-weight:700!important;text-decoration:underline!important;text-underline-offset:2px!important}
 .body-main #wrap,.body-main .top_area,.body-main #container,.body-main #contents,.body-main .sub_content,.body-main .content_box{display:block!important;max-width:none!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;float:none!important;background:none!important}
 .body-main .nav__my-link{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;border-radius:50%!important;text-decoration:none!important}
@@ -127,12 +130,15 @@ body:not(.body-main):has(.cut-mobile-header) .bd2-logo{display:none!important}
 .body-reauth .c-red,.body-reauth .cut-reauth-word{color:#1A1A1A!important;text-decoration:none!important}
 .body-reauth img[src*="/dobuddy/12cut/sns-"]{display:block!important;width:auto!important;max-width:180px!important;height:42px!important;margin:0 auto!important;object-fit:contain!important;border:none!important;background:none!important;box-shadow:none!important}
 @media screen and (max-width:850px){
-.body-reauth{padding-bottom:0!important;overflow-x:hidden!important}
-.body-reauth #wrap{min-width:0!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
-.body-reauth #container,.body-reauth #contents{min-width:0!important;width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow-x:hidden!important}
-.body-reauth #contents{padding:14px 16px 48px!important}
-.body-reauth .location_wrap,.body-reauth #footer_wrap,.body-reauth .scroll_wrap,.body-reauth #scroll_left,.body-reauth #scroll_right,.body-reauth .cut-bottom-nav{display:none!important}
-.body-reauth .sub_content,.body-reauth .content_box,.body-reauth .member_wrap,.body-reauth .member_cont{float:none!important;width:100%!important;max-width:480px!important;margin:0 auto!important;padding:0!important;border:0!important;background:none!important;box-sizing:border-box!important;overflow:hidden!important}
+.body-reauth,.body-mypage-password{padding-bottom:70px!important;overflow-x:hidden!important}
+.body-reauth #wrap,.body-mypage-password #wrap{min-width:0!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
+.body-reauth #container,.body-reauth #contents,.body-mypage-password #container,.body-mypage-password #contents{min-width:0!important;width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow-x:hidden!important}
+.body-reauth #contents,.body-mypage-password #contents{padding:200px 16px 86px!important}
+.body-mypage-password .content_box,.body-mypage-password .member_wrap,.body-mypage-password .member_cont,.body-mypage-password #my_custom{box-sizing:border-box!important}
+.body-mypage-password .content_box,.body-mypage-password .member_wrap,.body-mypage-password .member_cont{padding-top:0!important;margin-top:0!important}
+.body-reauth .location_wrap,.body-reauth #footer_wrap,.body-reauth .scroll_wrap,.body-reauth #scroll_left,.body-reauth #scroll_right,.body-mypage-password .location_wrap,.body-mypage-password #footer_wrap,.body-mypage-password .scroll_wrap,.body-mypage-password #scroll_left,.body-mypage-password #scroll_right{display:none!important}
+.body-reauth .cut-bottom-nav,.body-mypage-password .cut-bottom-nav,.body-mypage-edit .cut-bottom-nav{display:flex!important;z-index:1001!important}
+.body-reauth .sub_content,.body-reauth .content_box,.body-reauth .member_wrap,.body-reauth .member_cont,.body-mypage-password .sub_content,.body-mypage-password .content_box,.body-mypage-password .member_wrap,.body-mypage-password .member_cont{float:none!important;width:100%!important;max-width:480px!important;margin:0 auto!important;padding:0!important;border:0!important;background:none!important;box-sizing:border-box!important;overflow:hidden!important}
 .body-reauth img[src*="/dobuddy/12cut/sns-"]{max-width:168px!important;height:40px!important}
 .body-reauth *:has(>.cut-reauth-cancel):has(>.cut-reauth-primary){display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important}
 .body-reauth .cut-reauth-cancel,.body-reauth .cut-reauth-primary{flex:1 1 0!important;min-width:0!important;height:52px!important;padding:0 12px!important}
@@ -185,6 +191,7 @@ body:not(.body-main):has(.cut-mobile-header) .bd2-logo{display:none!important}
 
 /* ── 풀폭 소셜/진입 버튼 (Google 주 + 12cut 아이디 진입) ── */
 .body-login .sns_btn{display:flex!important;align-items:center;justify-content:center;gap:10px;width:100%;height:54px;margin:0 0 12px;padding:0;border-radius:14px;border:1px solid transparent;font-family:inherit;font-size:16px;font-weight:600;letter-spacing:-.02em;cursor:pointer;box-sizing:border-box;position:relative}
+.body-login .sns_btn.cut-sns-unavailable{display:none!important}
 .body-login .sns_btn__ico{width:20px;height:20px;background:no-repeat center/contain;position:absolute;left:18px;display:flex;align-items:center;justify-content:center}
 .body-login .sns_btn__ico svg{width:20px;height:20px;display:block}
 .body-login .sns_btn__ico--google{background-image:url(https://12cut.co.kr/dobuddy/imgs/sns_google.png)}
@@ -460,6 +467,11 @@ body:not(.body-main):has(.cut-mobile-header) .bd2-logo{display:none!important}
 .body-mypage-edit #formJoin,.body-mypage-edit #formJoin.member_cont{width:100%!important;max-width:100%!important;min-width:0!important;padding:0!important;border:none!important;border-radius:0!important;box-sizing:border-box!important}
 .body-mypage-edit #formJoin .f{width:100%!important;max-width:100%!important;margin:0!important;box-sizing:border-box!important}
 .body-mypage-edit #formJoin .f input[type=text],.body-mypage-edit #formJoin .f input[type=password],.body-mypage-edit #formJoin .f input[type=tel],.body-mypage-edit #formJoin .f input[type=email],.body-mypage-edit #pwd,.body-mypage-edit #pwd>a{max-width:100%!important;box-sizing:border-box!important}
+.body-mypage-edit #scroll_right .right_banner{position:fixed!important;right:16px!important;bottom:86px!important;z-index:101!important;width:54px!important;height:54px!important;margin:0!important;padding:0!important;border-radius:50%!important;background:#FEE500!important;box-shadow:0 6px 18px rgba(0,0,0,.14)!important;overflow:hidden!important}
+.body-mypage-edit #scroll_right .right_banner a{display:flex!important;align-items:center!important;justify-content:center!important;width:54px!important;height:54px!important;margin:0!important;padding:0!important;border-radius:50%!important;background:#FEE500!important;text-decoration:none!important;font-size:0!important;line-height:0!important}
+.body-mypage-edit #scroll_right .right_banner img{display:none!important}
+.body-mypage-edit #scroll_right .right_banner a::before{content:""!important;display:block!important;width:25px!important;height:20px!important;border-radius:50%!important;background:#000!important;box-shadow:8px 5px 0 -5px #000!important}
+.body-mypage-edit #scroll_right .right_banner a::after{content:""!important;position:absolute!important;left:23px!important;top:33px!important;width:8px!important;height:8px!important;background:#000!important;transform:rotate(35deg) skew(-18deg)!important;border-radius:1px!important}
 }
 
 /* PC(데스크톱) 헤더 아래 간격 확보 (모바일 슬림 헤더는 영향 없음) */
@@ -641,10 +653,10 @@ body:not(.body-main):has(.cut-mobile-header) .bd2-logo{display:none!important}
 .body-mypage:not(.body-mypage-edit) #my_custom>.body{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;box-sizing:border-box!important}
 .body-mypage:not(.body-mypage-edit) #my_custom .aside{width:100%!important;max-width:100%!important;margin:0!important;box-sizing:border-box!important}
 .body-mypage:not(.body-mypage-edit) #my_custom .content,.body-mypage:not(.body-mypage-edit) #my_custom .content_box,.body-mypage:not(.body-mypage-edit) #my_custom .mypage_table_type,.body-mypage:not(.body-mypage-edit) #my_custom .board_zone_cont{width:100%!important;max-width:100%!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important}
-.body-mypage-qa #my_custom{padding-top:22px!important}
+.body-mypage-qa #my_custom{padding-top:0!important}
 body.body-mypage-qa #header .header_top[data-h]{background:linear-gradient(180deg,#fff 0%,#fff 74%,rgba(255,255,255,.92) 88%,rgba(255,255,255,0) 100%)!important;overflow:visible!important}
 body.body-mypage-qa #header .header_top[data-h]:before{background:linear-gradient(180deg,#fff 0%,#fff 76%,rgba(255,255,255,.94) 90%,rgba(255,255,255,0) 100%)!important}
-.body-mypage-wish #my_custom{padding-top:12px!important}
+.body-mypage-wish #my_custom{padding-top:0!important}
 .body-mypage-wish #my_custom .list-msg{display:flex!important;align-items:center!important;justify-content:center!important;min-height:360px!important;padding:32px 20px!important;box-sizing:border-box!important}
 /* FAQ도 주문내역과 같은 모바일 시작점/16px 레일을 사용 */
 .body-faq{overflow-x:hidden!important}

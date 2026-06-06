@@ -183,6 +183,17 @@ const custom={
     if(location.pathname=='/service/qa.php'||location.pathname=='/mypage/mypage_qa.php'||location.search.indexOf('bdId=qa')>-1)return location.replace(_kakaoTalk);
     $('a[href*="service/notice.php"],a[href*="board/list.php?bdId=notice"]').closest('li,dd,div,a').addClass('cut-hide-notice-link');
     $('a[href*="service/qa.php"],a[href*="board/list.php?bdId=qa"],a[href*="mypage/mypage_qa.php"],.footer__links a[data-i18n="footer_contact"]').attr({href:_kakaoTalk,target:'_blank',rel:'noopener'});
+    var _hideFooterPartnership=function(){
+      $('#footer_wrap a,.footer a').each(function(){
+        var $a=$(this),txt=$a.text().replace(/\s+/g,' ').trim();
+        if(!/^(Partnership Inquiry|제휴\s*문의|パートナーシップ|合作咨询)$/i.test(txt))return;
+        $a.addClass('cut-hide-footer-link');
+        var n=this.nextSibling;
+        if(n&&n.nodeType===3)n.nodeValue=n.nodeValue.replace(/^\s*[|·ㆍ]\s*/,'');
+      });
+    };
+    _hideFooterPartnership();
+    setTimeout(_hideFooterPartnership,300);
     _wireKakaoInquiry();
     var _ff={en:["'Nunito'",'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap'],ja:["'Zen Maru Gothic'",'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap'],zh:["'GenSenRounded2 TC'",'https://fontsapi.zeoseven.com/303/main/result.css']}[_cl];
     if(_ff){var _s=document.createElement('style');_s.textContent='@import url("'+_ff[1]+'");body,body *{font-family:'+_ff[0]+",'Pretendard Variable','Pretendard',sans-serif!important}";document.head.appendChild(_s);}
@@ -192,6 +203,12 @@ const custom={
       zh:{'홈':'首页','마이':'我的','회원정보 수정':'修改会员信息','회원정보 변경':'修改会员信息','회원 탈퇴':'注销会员','찜한 상품이 없습니다.':'暂无收藏商品。','주문취소':'取消订单','주문 취소':'取消订单','회원탈퇴':'注销会员','탈퇴':'注销','탈퇴하기':'注销会员','회원탈퇴 신청':'申请注销会员','회원탈퇴 안내':'注销会员须知','회원탈퇴 사유':'注销原因','비밀번호 확인':'确认密码','비밀번호':'密码','현재 비밀번호':'当前密码','취소':'取消','확인':'确认','완료':'完成','회원 탈퇴를 하시겠습니까?':'确定要注销会员吗？','회원탈퇴를 하시겠습니까?':'确定要注销会员吗？','탈퇴하시겠습니까?':'确定要注销会员吗？','탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'申请注销会员前，请务必确认相关说明。','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'注销后，个人信息及购买记录将按相关法规保存后销毁。','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'注销后会员信息将被删除，且无法恢复。','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'如有进行中的订单，会员注销可能会受到限制。'}
     };
     var _ct=function(s){return (_cutPageTx[_cl]&&_cutPageTx[_cl][s])||$t(s);};
+    var _getCutBottomNavActive=function(){
+      var p=location.pathname;
+      if(p==='/'||p==='/main/index.php')return 'home';
+      if(p==='/goods/goods_view.php'||p.indexOf('/goods/goods_view.php')===0)return 'cut';
+      return 'my';
+    };
     var _syncCutBottomNav=function(){
       var $nav=$('.cut-bottom-nav');if(!$nav.length)return;
       var homeLbl=_ct('홈'),myLbl=_ct('마이'),navLbl=_ct('주요 메뉴'),$items=$nav.children('.cut-bottom-nav__item');
@@ -200,6 +217,11 @@ const custom={
       $items.eq(0).attr('aria-label',homeLbl).find('span').text(homeLbl);
       $items.eq(1).attr('aria-label','12cut').find('span').text('12cut');
       $items.eq(2).attr('aria-label',myLbl).find('span').text(myLbl);
+      var active=_getCutBottomNavActive();
+      $items.removeClass('is-active');
+      if(active==='home')$items.eq(0).addClass('is-active');
+      if(active==='cut')$items.eq(1).addClass('is-active');
+      if(active==='my')$items.eq(2).addClass('is-active');
     };
     var _applyCutLang=function(lang){
       if(lang)_cl=lang;
@@ -211,6 +233,53 @@ const custom={
     var _setLinkText=function($a,key){$a.contents().filter(function(){return this.nodeType===3;}).remove();$a.append(_ct(key));};
     if(location.pathname.indexOf('/mypage/')===0)$('body').addClass('body-mypage');
     if(location.pathname==='/mypage/mypage_qa.php')$('body').addClass('body-mypage-qa');
+    if(location.pathname==='/mypage/my_page_password.php')$('body').addClass('body-mypage-password body-reauth');
+    var _fixPasswordPageSpacing=function(){
+      if(location.pathname!=='/mypage/my_page_password.php')return;
+      $('body').addClass('body-mypage-password body-reauth');
+      $('#contents').css({padding:'200px 16px 86px',boxSizing:'border-box'});
+      $('.content_box,.member_wrap,.member_cont,#my_custom').css({boxSizing:'border-box'});
+      $('.content_box,.member_wrap,.member_cont').first().css({paddingTop:'0',marginTop:'0'});
+    };
+    _fixPasswordPageSpacing();
+    setTimeout(_fixPasswordPageSpacing,300);
+    setTimeout(_fixPasswordPageSpacing,900);
+    var _hideMypageMenus=function(ctx){
+      $(ctx||document).find('.aside a,#my_custom a').each(function(){
+        var $a=$(this),href=$a.attr('href')||'',txt=$a.text().replace(/\s+/g,' ').trim();
+        var hide=href.indexOf('wish_list.php')>-1||href.indexOf('goods_review')>-1||href.indexOf('review')>-1||href.indexOf('mileage')>-1||href.indexOf('hack_out.php')>-1||/찜|마이\s*리뷰|리뷰|마일리지|회원\s*탈퇴|회원탈퇴|탈퇴|Mileage|Review|Delete Account/i.test(txt);
+        if(!hide)return;
+        var $row=$a.closest('li,dd');
+        ($row.length?$row:$a).addClass('cut-hide-mypage-link');
+      });
+    };
+    _hideMypageMenus();
+    setTimeout(_hideMypageMenus,300);
+    var _orderMypageMenus=function(ctx){
+      var $scope=$(ctx||document).find('.aside,#my_custom').addBack('.aside,#my_custom');
+      var $delivery=$scope.find('a').filter(function(){
+        var $a=$(this),href=$a.attr('href')||'',txt=$a.text().replace(/\s+/g,' ').trim();
+        return /배송\s*안내|배송안내|배송|Shipping Guide|Shipping|Delivery|配送案内|配送|送料|送货|物流/i.test(txt)||href.indexOf('delivery')>-1||href.indexOf('shipping')>-1;
+      }).first();
+      var $inquiry=$scope.find('a').filter(function(){
+        var $a=$(this),href=$a.attr('href')||'',txt=$a.text().replace(/\s+/g,' ').trim();
+        return _isQaHref(href)||/1:1\s*(문의|상담)|1:1문의|1:1 상담|Contact|Inquiry|문의|상담|お問い合わせ|問い合わせ|咨询|諮詢|聯絡/i.test(txt);
+      }).first();
+      if(!$delivery.length||!$inquiry.length||$delivery[0]===$inquiry[0])return;
+      var _row=function($a){
+        var $r=$a.closest('li,dd');
+        if($r.length)return $r;
+        var $p=$a.parent();
+        if($p.length&&$p.find('>a').length===1&&$p.parent().children().length>1)return $p;
+        return $a;
+      };
+      var $d=_row($delivery),$q=_row($inquiry);
+      if($d[0]&&$q[0]&&$d.parent()[0]===$q.parent()[0]&&$d.index()>$q.index())$d.insertBefore($q);
+    };
+    _orderMypageMenus();
+    setTimeout(_orderMypageMenus,300);
+    setTimeout(_orderMypageMenus,900);
+    setTimeout(_orderMypageMenus,1600);
     $('.aside a[href*="my_page_password.php"]').each(function(){_setLinkText($(this),'회원정보 수정');});
     $('.aside a[href*="hack_out.php"]').each(function(){_setLinkText($(this),'회원 탈퇴');});
     var _cutBottomNav=function(){
@@ -218,7 +287,7 @@ const custom={
       var p=location.pathname;
       var blocked=p.indexOf('/member/')===0||p==='/order/order.php'||p==='/order/order_end.php'||p.indexOf('/dobuddy/12cut/12cutEditor.html')===0;
       if(blocked)return;
-      var active=p.indexOf('/mypage/')===0?'my':(p==='/'||p==='/main/index.php'?'home':'cut');
+      var active=_getCutBottomNavActive();
       var item=function(key,href,label,icon){
         return '<a class="cut-bottom-nav__item'+(active===key?' is-active':'')+'" href="'+href+'" aria-label="'+label+'">'+icon+'<span>'+label+'</span></a>';
       };
@@ -251,7 +320,7 @@ const custom={
       };
       window.__cutPostcodeOpen=1;
     }
-    var _reauth=function(){if($('body').hasClass('body-reauth'))return;var _cancel=$t('취소').replace(/\s+/g,'').trim(),_pri=$t('인증하기').replace(/\s+/g,'').trim(),$pri=$('button,input,a').filter(function(){var t=(this.value||$(this).text()).replace(/\s+/g,'').trim();return t==_pri;});if(!$pri.length)return;if(!$('.c-red').length&&!$('img[src*="kakao"],img[alt*="kakao"],img[alt*="카카오"]').length)return;$('body').addClass('body-reauth');$('button,input,a').filter(function(){var t=(this.value||$(this).text()).replace(/\s+/g,'').trim();return t==_cancel;}).addClass('cut-reauth-cancel');$pri.addClass('cut-reauth-primary');var _setAuthLogo=function(q,src){$('body').find(q).attr('src',src);};_setAuthLogo('img[alt*="kakao"],img[src*="kakao"],img[alt*="카카오"]','/dobuddy/12cut/sns-kakao.png');_setAuthLogo('img[alt*="naver"],img[src*="naver"],img[alt*="네이버"]','/dobuddy/12cut/sns-naver.png');_setAuthLogo('img[alt*="facebook"],img[src*="facebook"],img[alt*="페이스북"]','/dobuddy/12cut/sns-facebook.png');var $k=$('img[alt*="kakao"],img[src*="sns-kakao"],img[alt*="카카오"]').first();if(!$k.length)$k=$('body *').filter(function(){var t=$(this).text().replace(/\s+/g,' ').trim().toLowerCase();return t&&(t.indexOf('kakao')>-1||t.indexOf('카카오')>-1);}).not('.cut-reauth-cancel,.cut-reauth-primary').last();var $box=$k;for(var i=0;i<5&&$box.length;i++){var r=$box[0].getBoundingClientRect();if(r.width>200&&r.height>50)break;$box=$box.parent();}if($box.length)$box.addClass('cut-kakao-plain');};
+    var _reauth=function(){if($('body').data('cutReauthReady'))return;var _cancel=$t('취소').replace(/\s+/g,'').trim(),_pri=$t('인증하기').replace(/\s+/g,'').trim(),$pri=$('button,input,a').filter(function(){var t=(this.value||$(this).text()).replace(/\s+/g,'').trim();return t==_pri;});if(!$pri.length)return;if(!$('.c-red').length&&!$('img[src*="kakao"],img[alt*="kakao"],img[alt*="카카오"]').length&&!$('body').hasClass('body-mypage-password'))return;$('body').data('cutReauthReady',1).addClass('body-reauth');$('button,input,a').filter(function(){var t=(this.value||$(this).text()).replace(/\s+/g,'').trim();return t==_cancel;}).addClass('cut-reauth-cancel');$pri.addClass('cut-reauth-primary');var _setAuthLogo=function(q,src){$('body').find(q).attr('src',src);};_setAuthLogo('img[alt*="kakao"],img[src*="kakao"],img[alt*="카카오"]','/dobuddy/12cut/sns-kakao.png');_setAuthLogo('img[alt*="naver"],img[src*="naver"],img[alt*="네이버"]','/dobuddy/12cut/sns-naver.png');_setAuthLogo('img[alt*="facebook"],img[src*="facebook"],img[alt*="페이스북"]','/dobuddy/12cut/sns-facebook.png');var $k=$('img[alt*="kakao"],img[src*="sns-kakao"],img[alt*="카카오"]').first();if(!$k.length)$k=$('body *').filter(function(){var t=$(this).text().replace(/\s+/g,' ').trim().toLowerCase();return t&&(t.indexOf('kakao')>-1||t.indexOf('카카오')>-1);}).not('.cut-reauth-cancel,.cut-reauth-primary').last();var $box=$k;for(var i=0;i<5&&$box.length;i++){var r=$box[0].getBoundingClientRect();if(r.width>200&&r.height>50)break;$box=$box.parent();}if($box.length)$box.addClass('cut-kakao-plain');};
     _reauth();setTimeout(_reauth,300);setTimeout(_reauth,900);
     switch(location.pathname){
       case '/order/order.php':
