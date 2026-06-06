@@ -144,6 +144,20 @@ const custom={
     }catch(e){}
     $('#sel_currency option,#sel_lang option').removeAttr('disabled');
     var _cl=localStorage.$mylang||'ja';$('#sel_lang').val(_cl);$('body').removeClass('ko en ja zh').addClass(_cl);
+    var _syncLoginSnsButtons=function(){
+      if(location.pathname!=='/member/login.php')return;
+      [
+        ['.sns_btn--apple','.btn_apple_login'],
+        ['.sns_btn--facebook','.btn_facebook_login']
+      ].forEach(function(v){
+        var $btn=$(v[0]),ok=$(v[1]).length>0;
+        if(!$btn.length)return;
+        $btn.toggleClass('cut-sns-unavailable',!ok).attr('aria-disabled',ok?'false':'true');
+        if(ok)$btn.off('click.cutSnsUnavailable');
+        else $btn.off('click.cutSnsUnavailable').on('click.cutSnsUnavailable',function(e){e.preventDefault();e.stopImmediatePropagation();return false;});
+      });
+    };
+    _syncLoginSnsButtons();setTimeout(_syncLoginSnsButtons,300);setTimeout(_syncLoginSnsButtons,900);
     var _cutMobileHeader=function(){
       if($('.cut-mobile-header').length||$('body').hasClass('body-main'))return;
       var blocked=location.pathname.indexOf('/dobuddy/12cut/12cutEditor.html')===0;
