@@ -37,7 +37,7 @@
       v-html="$t('슬라이드에 나오는 사진의 순서를 정해주세요. 😊<br>완료되면, <b>“트리밍” 버튼</b>을 눌러주세요.')"></div>
     <div data-t v-if="step==2" class="tab-guide fade-in"
       v-html="$t('필름 사이즈에 알맞게 트리밍하세요. 😊<br>완료되면, <b>“스토리 미리보기” 버튼</b>을 눌러주세요.')"></div>
-    <div data-t v-if="step>2" class="tab-guide fade-in"
+    <div data-t v-if="step==3" class="tab-guide fade-in"
       v-html="$t('‘화면 터치’ 또는 ‘마우스 휠’로 회전시켜<br>사진과 스토리가  잘 적용되었는지 확인해 주세요 😊')">
     </div>
     <!-- 트리밍 @mousedown="fabric.setActiveObject(selImg)" -->
@@ -49,7 +49,7 @@
     <!-- 파일업로드 부분: 드래그앤드롭, 멀티선택 지원 / 비어있으면 업로드 차있으면 순서선택 토글 -->
     <div v-if="step<3" @dragover.prevent @drop.prevent="load($event.dataTransfer.files)" class="imgs fade-in">
       <div :data-i="step==2 ? i : step==0 ? (imgs[i-1] ? 'X' : undefined) : (cuts.indexOf(imgs[i-1])+1 || '')"
-        v-for="i of 12" class="load" @click="sel(i-1)">
+        :class="['load', imgs[i-1] && 'has-img', (step==2 ? i : cuts.indexOf(imgs[i-1])+1) > 9 && 'badge-wide']" v-for="i of 12" @click="sel(i-1)">
         <img v-if="step==2" :class="i-1==selIdx&&'active'" :style="{opacity:imgs[i-1]?1:0}"
           :src="cuts[i-1].cut||cuts[i-1].src">
         <img v-else :style="{opacity:imgs[i-1]?1:0}" @load="checkImg($event.target, i-1)"
@@ -70,10 +70,16 @@
       </div>
       <img v-if="!isFull" style="margin-top:42vw;width:15vw" src="imgs/heart.png">
     </div>
+    <!-- 스토리 저장 완료 -->
+    <div v-if="step==4" class="complete-view">
+      <div class="complete-title" v-text="$t('스토리 저장 완료 !')"></div>
+      <div class="complete-copy" v-text="$t('디자인이 장바구니에 추가되었습니다 !')"></div>
+      <img class="complete-product" src="imgs/prod.png">
+    </div>
     <!-- 타이틀바 -->
-    <div
+    <div v-if="step!=4"
       style="background:#fff;padding:0 1em;position:fixed;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:center">
-      <a @click="window.parent.closeEditor()"><i style="font-size:120%" class="bi bi-x-lg"></i></a>
+      <a @click="closeEditor()" aria-label="닫기" style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin-left:-12px"><i style="font-size:120%" class="bi bi-x-lg"></i></a>
       <h3 @dblclick="window.localStorage.removeItem('12cut_guide');alert('ok')" data-t v-text="$t('스토리만들기')"></h3>
       <div>
         <!-- <span style="font-size:120%;color:var(--primary)">{{step==0?Math.min(12,cuts.length+1):selIdx}}</span>/12 -->
@@ -81,11 +87,18 @@
     </div>
     <!-- 하단버튼 -->
     <div class="btns foot" style="z-index:1">
-      <a data-t v-if="!isFull" @click="if(step<1){step=0;imgs=[];cuts=[]}else step--" v-text="$t(step>2 ?
-        '트리밍':['처음부터다시','12컷 선택','순서선택'][step])"></a>
-      <a data-t v-if="!isFull" :disabled="(step==0&&imgs.length<12)||(step>0&&cuts.length<12)" @click="nextStep()"
-        class="primary" v-text="$t(step>2 ? '스토리 저장하기':['순서선택','트리밍','스토리 미리보기'][step])"></a>
-      <a v-if="isFull" style="width:80%" @click="isFull=false" class="primary" v-text="$t('닫기')"></a>
+      <template v-if="step==4">
+        <div style="font-size:110%;text-decoration:underline" v-text="$t('와우! 너무 예쁘네요 :)')"></div>
+        <a @click="nextStep('cart')" style="width:calc(100% - 60px);margin:40px 0 10px" v-text="$t('장바구니 보기 & 추가 주문하기')"></a>
+        <a @click="nextStep()" style="width:calc(100% - 60px)" class="primary" v-text="$t('바로 결제하기')"></a>
+      </template>
+      <template v-else>
+        <a data-t v-if="!isFull" @click="if(step<1){step=0;imgs=[];cuts=[]}else step--" v-text="$t(step>2 ?
+          '트리밍':['처음부터다시','12컷 선택','순서선택'][step])"></a>
+        <a data-t v-if="!isFull" :disabled="(step==0&&imgs.length<12)||(step>0&&cuts.length<12)" @click="nextStep()"
+          class="primary" v-text="$t(step>2 ? '스토리 저장하기':['순서선택','트리밍','스토리 미리보기'][step])"></a>
+        <a v-if="isFull" style="width:80%" @click="isFull=false" class="primary" v-text="$t('닫기')"></a>
+      </template>
     </div>
     <canvas ref="canvas" style="display:none"></canvas>
     <div v-if="alertData.html" class="alert fade-in">
@@ -147,6 +160,22 @@
     if (Array.isArray(params)) for (const p of params) txt = txt.replace('$', p);
     return txt;
   };
+  function applyEditorFont(lang) {
+    lang = ['en', 'ja', 'zh', 'ko'].includes(lang) ? lang : 'ko';
+    const font = {
+      en: ["'Nunito'", 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap'],
+      ja: ["'Zen Maru Gothic'", 'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap'],
+      zh: ["'GenSenRounded2 TC'", 'https://fontsapi.zeoseven.com/303/main/result.css']
+    }[lang];
+    document.documentElement.lang = lang;
+    document.body.classList.remove('ko', 'en', 'ja', 'zh');
+    document.body.classList.add(lang);
+    if (!font || document.getElementById('cut-editor-lang-font')) return;
+    const style = document.createElement('style');
+    style.id = 'cut-editor-lang-font';
+    style.textContent = '@import url("' + font[1] + '");html,body,body *{font-family:' + font[0] + ",'Pretendard',sans-serif!important}";
+    document.head.appendChild(style);
+  }
   const clickSound = new Audio('/dobuddy/12cut/imgs/go.snd');
   // 일반페이지의 다국어 공통스크립트
   // fetch(`/editor/${navigator.language}.html`).then(r => r.text().then(r => {
@@ -162,11 +191,10 @@
     $('.guide>div:first-child').css({ height: 0 });
     $('.guide').css({ opacity: 0 });
     setTimeout(() => $('.guide').remove(), 500);
-    if (!isTest) $vm.tooltip('.load', '클릭하면 이미지를 선택할 수 있어요');
+    if (!isTest && $vm.imgs.length < 1 && $vm.step == 0) $vm.tooltip('.load', '클릭하면 이미지를 선택할 수 있어요');
   };
   $(() => {
     $('.carusel:not(.slick-initialized)').slick({ dots: true, arrows: false });
-    setTimeout(() => { if (localStorage.getItem('12cut_guide')) hideSlick(); }, 500);
     $(window).on("resize", () => $vm.isLandscape = innerHeight < 430);
   });
   fabric.Object.prototype.setControlsVisibility({
@@ -188,6 +216,7 @@
     // cornerStyle: "circle"
   });
   const rotateImg = new Image();
+  const rotateSvg = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.6271 7.0636C13.627 10.6882 10.6885 13.6261 7.06363 13.6261C3.43874 13.6261 0.500294 10.6882 0.500159 7.0636C0.500159 3.43885 3.43866 0.500122 7.06364 0.500122C10.6886 0.500165 13.6271 3.43888 13.6271 7.0636Z" fill="#FF7373" stroke="white"/><path d="M9.87373 10.5451L8.26594 10.5451C8.15934 10.5451 8.0571 10.5027 7.98172 10.4273C7.90634 10.352 7.864 10.2497 7.864 10.1431L7.864 8.53542C7.864 8.42882 7.90634 8.32659 7.98172 8.25121C8.0571 8.17584 8.15934 8.13349 8.26594 8.13349C8.37255 8.13349 8.47478 8.17584 8.55016 8.25121C8.62554 8.32659 8.66789 8.42882 8.66789 8.53542L8.66789 9.17181L8.92916 8.91055C9.40452 8.43756 9.67269 7.79523 9.67477 7.12465L9.67477 7.11025C9.67622 6.44566 9.41595 5.80722 8.95026 5.33305C8.87573 5.25684 8.83452 5.15413 8.83572 5.04754C8.83691 4.94094 8.8804 4.83919 8.95662 4.76466C9.03285 4.69013 9.13555 4.64893 9.24215 4.65012C9.34875 4.65132 9.45051 4.69481 9.52504 4.77102C10.1382 5.39543 10.4808 6.23616 10.4787 7.11125L10.4787 7.12867C10.4763 8.01149 10.1234 8.85722 9.49758 9.47995L9.23732 9.74121L9.87373 9.74121C9.98034 9.74121 10.0826 9.78355 10.158 9.85893C10.2333 9.9343 10.2757 10.0365 10.2757 10.1431C10.2757 10.2497 10.2333 10.352 10.158 10.4273C10.0826 10.5027 9.98034 10.5451 9.87373 10.5451ZM5.43791 9.05826C4.97197 8.58385 4.71168 7.945 4.7134 7.28006L4.7134 7.26566C4.71548 6.59509 4.98365 5.95275 5.45901 5.47976L5.72028 5.21951L5.72028 5.8559C5.72028 5.96249 5.76263 6.06473 5.83801 6.1401C5.91339 6.21548 6.01562 6.25782 6.12223 6.25782C6.22883 6.25782 6.33106 6.21548 6.40644 6.1401C6.48182 6.06473 6.52417 5.96249 6.52417 5.8559L6.52417 4.24818C6.52417 4.14158 6.48182 4.03935 6.40644 3.96398C6.33107 3.8886 6.22883 3.84625 6.12223 3.84625L4.51444 3.84625C4.40783 3.84625 4.3056 3.8886 4.23022 3.96397C4.15484 4.03935 4.11249 4.14158 4.11249 4.24818C4.11249 4.35478 4.15484 4.45701 4.23022 4.53239C4.3056 4.60776 4.40783 4.65011 4.51444 4.65011L5.15085 4.65011L4.88959 4.91136C4.26416 5.53426 3.91165 6.37997 3.90951 7.26265L3.90951 7.2814C3.90738 8.1565 4.24997 8.99723 4.86313 9.62163C4.90003 9.65937 4.94401 9.68947 4.99255 9.71022C5.04109 9.73096 5.09323 9.74194 5.14602 9.74253C5.1988 9.74312 5.25118 9.73331 5.30017 9.71366C5.34916 9.69401 5.39381 9.6649 5.43155 9.628C5.46929 9.59109 5.49939 9.54712 5.52013 9.49858C5.54088 9.45004 5.55186 9.3979 5.55245 9.34512C5.55304 9.29234 5.54323 9.23996 5.52358 9.19097C5.50393 9.14198 5.47482 9.09734 5.43791 9.0596L5.43791 9.05826Z" fill="white"/></svg>`;
   rotateImg.onload = _ => fabric.Object.prototype.controls.mtr = new fabric.Control({
     x: 0, y: -0.5, offsetY: -40, // 객체와 간격 조정
     actionHandler: function(eventData, transform, x, y) {
@@ -203,7 +232,7 @@
       ctx.restore();
     }
   });
-  rotateImg.src = '/dobuddy/12cut/imgs/rotate.png';
+  rotateImg.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(rotateSvg);
 
   let toastTimer, tooltipTimer, isTest = location.hostname == '127.0.0.1' || parent.location.search.includes('dev=1');
   const CUT_WIDTH = 847, CUT_HEIGHT = 739, CUT_MIN_PIXEL = 847;
@@ -221,6 +250,28 @@
     },
     // computed: { isLandscape() { return window.innerHeight < 430 } },
     methods: {
+      async closeEditor() {
+        if (!(await this.alert($t('편집중인 스토리가 삭제됩니다.'), { confirm: true }))) return;
+        window.onbeforeunload = null;
+        try {
+          if (window.parent && window.parent !== window && typeof window.parent.closeEditor == 'function') {
+            window.parent.closeEditor();
+            return;
+          }
+        } catch (e) {}
+        let returnUrl = '/goods/goods_view.php?goodsNo=1000000000';
+        try {
+          const key = '$12cutEditorReturnUrl';
+          const stored = localStorage.getItem(key) || sessionStorage.getItem(key);
+          if (stored) {
+            const url = new URL(stored, location.origin);
+            if (url.origin == location.origin) returnUrl = url.pathname + url.search + url.hash;
+          }
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (e) {}
+        location.replace(returnUrl);
+      },
       closeTooltip() {
         if (this.tooltipText == '') return;
         this.$refs.tooltip.style.opacity = 0;
@@ -232,7 +283,7 @@
         }, 500);
       },
       async tooltip(selector, text) {
-        // clearTimeout(tooltipTimer);
+        clearTimeout(tooltipTimer);
         if (this.tooltipText) {
           this.tooltipText = '';
           await this.$nextTick();
@@ -246,7 +297,36 @@
           // console.log({ x, y, width, height }, this.tooltipPos.left);
         }
         else this.tooltipPos = selector;
-        // tooltipTimer = setTimeout(() => this.tooltipText = '', 3000);
+        tooltipTimer = setTimeout(() => this.tooltipText = '', 3000);
+      },
+      trimTooltipPos() {
+        const el = this.$refs.fabric && this.$refs.fabric.parentNode;
+        if (!el) return { top: '24em', left: 'calc(100vw - 216px)', width: '200px' };
+        const r = el.getBoundingClientRect();
+        const width = 200;
+        const left = Math.max(16, Math.min(innerWidth - width - 16, r.left + r.width / 2 - width / 2));
+        return { top: (r.top + r.height * 0.82) + 'px', left: left + 'px', width: width + 'px' };
+      },
+      trimMask() {
+        const guide = {
+          left: CUT_WIDTH * 0.191,
+          top: CUT_WIDTH * 0.237,
+          width: CUT_WIDTH * 0.618
+        };
+        guide.height = guide.width / 1.134;
+        const inset = CUT_WIDTH * (8 / 343);
+        return {
+          left: guide.left + inset,
+          top: guide.top + inset,
+          width: guide.width - inset * 2,
+          height: guide.height - inset * 2,
+          radius: CUT_WIDTH * (22 / 343)
+        };
+      },
+      exportFabricDataUrl() {
+        const width = this.fabric && (this.fabric.getWidth ? this.fabric.getWidth() : this.$refs.fabric.width);
+        const multiplier = width ? Math.max(1, (CUT_WIDTH * 2) / width) : 2;
+        return this.fabric.toDataURL({ multiplier });
       },
       async toast(html) {
         if (this.toastHtml) {
@@ -273,6 +353,7 @@
       // 드래그앤드롭이나 파일일선택창으로 멀티선택된 파일 읽기
       async load(files) {
         if (this.step > 0) return;
+        this.tooltipText = '';
         this.alert(`<img id=loading style=height:7em src=/dobuddy/12cut/imgs/loading.gif>`,{title:'',okTitle:''});
         try {
           for (let file of files) {
@@ -280,7 +361,6 @@
               src: await new Promise(res => {
                 const reader = new FileReader();
                 reader.onload = e => {
-                  if (this.imgs.length < 1) this.tooltip('.load', '클릭하면 이미지를 삭제할 수 있어요');
                   res(e.target.result);
                 }
                 reader.readAsDataURL(file);
@@ -309,17 +389,11 @@
           const xywh = this.cuts[this.selIdx].fabric;
           if (xywh) img.set(xywh);
           else {
-            const zoom = this.fabric.getZoom();
-            if (img.height * 1.146 > img.width) {
-              img.scaleToWidth(w/zoom/1.7);
-              img.left = w/zoom*0.205;
-              img.top = (h/zoom-img.height*img.scaleY)/2
-            }
-            else {
-              img.scaleToHeight(h/zoom/2);
-              img.top = h/zoom/4;
-              img.left = (w/zoom-img.width*img.scaleX)/2
-            }
+            const mask = this.trimMask();
+            const scale = Math.max(mask.width / img.width, mask.height / img.height);
+            img.scale(scale);
+            img.left = mask.left + (mask.width - img.width * scale) / 2;
+            img.top = mask.top + (mask.height - img.height * scale) / 2;
           }
           this.fabric.add(img);
           this.fabric.setActiveObject(img);
@@ -364,28 +438,20 @@
         });
       },
       // 하단의 다음단계버튼 처리
-      async nextStep() {
-        // 테스트용 임시
-        // if (this.cuts.length == 0) this.cuts = [...this.imgs];
-        // 일반적인 다음단계진행
-        if (this.step == 2 && !(await this.alert($t('사진 트리밍 완료하셨나요?'), { title: '스토리 미리보기', okTitle: '확인', confirm: true }))) return;
+      async nextStep(to) {
+        if (this.step == 4) {
+          window.onbeforeunload = null;
+          parent.location=`/order/${to||'order'}.php`;
+        }
+        else if (this.step == 2 && !(await this.alert($t('사진 트리밍 완료하셨나요?'), { title: '스토리 미리보기', okTitle: '확인', confirm: true }))) return;
         else if (this.step < 3) this.step++;
-        // 최종 합쳐진이미지 생성
         else {
           this.alert(`<img id=loading style=height:7em src=/dobuddy/12cut/imgs/loading.gif>`,{title:'',okTitle:''});
-          try{await this.save();this.alert()}catch(e){console.log(e);this.alert($t('저장에 실패했습니다.'))}
+          try{await this.save();this.alert();this.step=4}catch(e){console.log(e);this.alert($t('저장에 실패했습니다.'))}
         }
       },
       async save() {
         const canvas = this.$refs.canvas, toBlob = _=>new Promise(res=>canvas.toBlob(res,'image/png'));
-        // 저장용
-        // canvas.width = CUT_WIDTH * 4;
-        // canvas.height = CUT_HEIGHT * 3;
-        // let ctx = canvas.getContext('2d'), i = 0;
-        // for (const img of this.$refs.cut)
-        //   ctx.drawImage(img, (i % 4) * CUT_WIDTH, Math.floor(i++ / 4) * CUT_HEIGHT, CUT_WIDTH, CUT_HEIGHT);
-        // await this.alert(`<img style="width:100%" src="${canvas.toDataURL('image/png')}">`, { title: `저장용 (${CUT_WIDTH * 4}x${CUT_HEIGHT * 3})` });
-
         // 인쇄용 (5000x5000)
         w = 5000;
         canvas.width = w;
@@ -408,7 +474,6 @@
         ctx.font = "390px verdana, sans-serif";
         const dt = new Date();
         ctx.fillText(`${(dt.getFullYear() + '').slice(-2)}${('0' + (dt.getMonth() + 1)).slice(-2)}${('0' + dt.getDate()).slice(-2)}`, w / 2, w * 0.43);
-        // ctx.fillText('0910000002', w / 2, w * 0.63);
         // await this.alert(`<img style="width:100%" src="${canvas.toDataURL('image/png')}">`, { title: '인쇄용 (5000x5000)' });
         const printPng = await toBlob();
 
@@ -431,19 +496,17 @@
         }
         // const thumbPng = await (await fetch(canvas.toDataURL('image/png'))).blob();
         const thumbPng = await toBlob();
-        
-let gno='1000000000',price='13500',body=`mode=cartIn&scmNo=1&cartMode=d&set_goods_price=${price}&set_goods_fixedPrice=15000.00&set_goods_mileage=0&set_goods_stock=%E2%88%9E&set_coupon_dc_price=${price}.00&set_goods_total_price=0&set_option_price=0&set_option_text_price=0&set_add_goods_price=0&set_total_price=${price}&mileageFl=c&mileageGoods=0.00&mileageGoodsUnit=percent&goodsDiscountFl=y&goodsDiscount=35.00&goodsDiscountUnit=percent&taxFreeFl=t&taxPercent=10.0&scmNo=1&brandCd=001&cateCd=001&optionFl=n&goodsDeliveryFl=y&sameGoodsDeliveryFl=n&useBundleGoods=1&acePid=&event_id=&deliveryMethodFl=delivery&deliveryCollectFl=pre&goodsNo%5B%5D=${gno}&optionSno%5B%5D=1&goodsPriceSum%5B%5D=${price}&addGoodsPriceSum%5B%5D=0&couponApplyNo%5B%5D=&couponSalePriceSum%5B%5D=&couponAddPriceSum%5B%5D=&goodsCnt%5B%5D=1&optionPriceSum%5B%5D=0&option_price_0=0.00`;
-const cartId = ((await(await fetch('/order/cart_ps.php',{body,headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'},method:'post'})).json()).goods||[])[0];
-if(!cartId) return this.$alert($t('카트저장에 실패하였습니다.'));
-sessionStorage.setItem('cartSno',cartId);
-body = new FormData();
-body.append('type', '12cut_upload');
-body.append('folder', '12cut_usr/cart/');
-body.append('thumbPng', thumbPng, cartId+'_thumb.png');
-body.append('printPng', printPng, cartId+'.png');
-await fetch('https://img.12cut.net/api.php',{method:'POST',body});
-window.onbeforeunload = null;
-parent.location='/order/order.php';
+        // save 
+        let gno='1000000000',price='13500',body=`mode=cartIn&scmNo=1&cartMode=&set_goods_price=${price}&set_goods_fixedPrice=${price}.00&set_goods_mileage=0&set_goods_stock=2&set_coupon_dc_price=${price}.00&set_goods_total_price=0&set_option_price=0&set_option_text_price=0&set_add_goods_price=0&set_total_price=${price}&mileageFl=c&mileageGoods=0.00&mileageGoodsUnit=percent&goodsDiscountFl=y&goodsDiscount=0.00&goodsDiscountUnit=percent&taxFreeFl=t&taxPercent=10.0&scmNo=1&brandCd=001&cateCd=001&optionFl=n&goodsDeliveryFl=y&sameGoodsDeliveryFl=n&useBundleGoods=1&acePid=&event_id=&deliveryMethodFl=delivery&deliveryCollectFl=pre&goodsNo%5B%5D=${gno}&optionSno%5B%5D=14&goodsPriceSum%5B%5D=${price}&addGoodsPriceSum%5B%5D=0&couponApplyNo%5B%5D=&couponSalePriceSum%5B%5D=&couponAddPriceSum%5B%5D=&goodsCnt%5B%5D=1&optionPriceSum%5B%5D=0&option_price_0=0.00`;
+        const cartId = ((await(await fetch('/order/cart_ps.php',{body,headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'},method:'post'})).json()).goods||[])[0];
+        if(!cartId) return this.$alert($t('카트저장에 실패하였습니다.'));
+        sessionStorage.setItem('cartSno',cartId);
+        body = new FormData();
+        body.append('type', '12cut_upload');
+        body.append('folder', '12cut_usr/cart/');
+        body.append('thumbPng', thumbPng, cartId+'_thumb.png');
+        body.append('printPng', printPng, cartId+'.png');
+        await fetch('https://img.12cut.net/api.php',{method:'POST',body});
       },
       async complete(thumbPng) {
         // 서브밋을 위한 알림제거
@@ -483,13 +546,14 @@ parent.location='/order/order.php';
           //   mask.scaleToWidth(CUT_WIDTH - 10);
           //   this.fabric.setOverlayImage(mask, this.fabric.renderAll.bind(this.fabric));
           // });
+          const trimMask = this.trimMask();
           let mask = new fabric.Rect({
-            left: CUT_WIDTH / 4 - 30,
-            top: CUT_WIDTH / 4,
-            width: CUT_WIDTH / 2 + 60,
-            height: CUT_WIDTH / 2,
-            rx: CUT_WIDTH / 15,
-            ry: CUT_WIDTH / 15,
+            left: trimMask.left,
+            top: trimMask.top,
+            width: trimMask.width,
+            height: trimMask.height,
+            rx: trimMask.radius,
+            ry: trimMask.radius,
             // objectCaching: false,
           });
           this.fabric.clipPath = mask;
@@ -498,30 +562,35 @@ parent.location='/order/order.php';
           this.fabric.on('object:modified', async () => {
             // mask.opacity = 0;
             this.fabric.clipPath = null;
-            const src = this.fabric.toDataURL();
+            const src = this.exportFabricDataUrl();
             // mask.opacity = 1;
             this.fabric.clipPath = mask;
             this.cuts[this.selIdx].cut = await this.cropCut(src, true);
             this.$forceUpdate();
           });
           this.sel(0);
-          this.tooltip({ top: '24em', left: 'calc(75vw - 64px)' }, '레드 포인트를 움직이면<br>줌/회전을 할 수 있어요');
+          this.tooltip(this.trimTooltipPos(), '레드 포인트를 움직이면<br>줌/회전을 할 수 있어요');
         }
         else if (this.step == 3) {
+          if (from == 2 && this.fabric && this.fabric.getObjects().length) {
+            const clipPath = this.fabric.clipPath;
+            this.fabric.clipPath = null;
+            const src = this.exportFabricDataUrl();
+            this.fabric.clipPath = clipPath;
+            this.cuts[this.selIdx].cut = await this.cropCut(src, true);
+          }
           for (const cut of this.cuts) if (!cut.cut) cut.cut = await this.cropCut(cut.src);
           setTimeout(() => this.tooltip({ top: 'calc(7.5em + 30vw)', left: 'calc(50vw - 72px)' }, '클릭하면 이미지를 확대할 수 있어요'), 500);
         }
         await this.$nextTick();
-        if (this.step == 1) {
-          if (this.cuts.length < 1) this.tooltip('.load', '클릭해서 사진의 순서를 정해주세요');
-        }
       },
       $t,
     },
     mounted() {
       // if (localStorage.$lang) $lang = JSON.parse(localStorage.$lang);
       // else
-      const lang = localStorage.$mylang || navigator.language.slice(0, 2);
+      const lang = (localStorage.$mylang || navigator.language.slice(0, 2)).slice(0, 2);
+      applyEditorFont(lang);
       fetch(`/dobuddy/files/${lang}.html`).then(r => r.text().then(r => {
         localStorage.$lang = r; window.$lang = this.$rang = JSON.parse(r);
         $('t,[data-t]').each((_, el) => {

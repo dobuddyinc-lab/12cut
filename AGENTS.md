@@ -227,9 +227,181 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 ##### 다른 창 작업 흔적 — `skin/mypage/index.html`(미커밋)
 - 다른 창에서 **마이페이지(`mypage/index.php`) 스킨**을 라이브에서 받아 `skin/mypage/index.html`로 미러링함(godo 토큰 raw: `진행 중인 주문`·`최근 본 상품` 등 주문 요약/최근주문/최근본상품 구조). `skin/main/index.html` 미러 패턴과 동일. **아직 디자인 적용 전 원본 스냅샷**으로 추정 → 향후 마이페이지 리디자인 base.
 
+#### 세션 기록 (2026-06-05 / 히어로 스크롤 인디케이터 삭제 — 코드 반영·배포 미완)
+- **변경(로컬 완료)**: 히어로 CTA 하단의 스크롤 인디케이터(`SCROLL` 텍스트 + 펄스 라인) 제거.
+ - HTML 2곳: `skin/main/index.html`(라이브 스킨 미러)·`index.html`(레퍼런스 원본)에서 `.hero__scroll-hint`(`.hero__scroll-line`+`<span>SCROLL</span>`) 블록 삭제.
+ - CSS: `style.css`에서 `.hero__scroll-hint`·`.hero__scroll-hint span`·`.hero__scroll-line` 규칙 + **전용** `@keyframes scrollPulse` 삭제. (공용 `fadeInUp`은 다른 4곳에서 사용 → 유지.)
+ - 캐시버스팅: `skin/main/index.html`의 `style.css?v=5`→**`?v=6`**.
+- **★ 배포 완료·검증(2026-06-05 밤)**: `.up_hero2.exp`(ServerAlive+fail-fast)로 1회 성공 — 인증 170ms, `skin/main/index.html`(33KB)·`style.css`(26KB) 100% 전송, `style.css` mtime 22:19 확인. **라이브 검증: 홈 `hero__scroll-hint`=0, `style.css?v=6` 참조, CSS `scrollPulse`=0.** 스크롤 인디케이터 라이브 제거 완료.
+
+##### ★★ godo SFTP 배포 지연 정밀 진단 결과 (2026-06-05 / 재현·해결)
+- **증상**: 배포 SFTP가 비번 전송 후 `sftp>` 대기에서 **무한 행(200초+)** 또는 인증 직후 `Connection reset`. "느리다"의 정체.
+- **단계별 측정(ssh -vv + perl 타임스탬프)**: TCP 연결 **0.017s**, SSH 핸드셰이크(KEX·호스트키 ssh-rsa·SERVICE_ACCEPT) **0.26s**, 정상 시 비번 인증 완료 **0.19s**(`.diag_auth.exp` 측정). → **회선·핸드셰이크·코드·비번 전부 정상. 본질적으로 느리지 않음.**
+- **진짜 원인 = 간헐적 throttle/tarpit**: **에이전트의 즉석 반복·중단 연결**이 godo의 fail2ban류 차단(또는 계정 동시세션 한도)을 유발 → 백투백 재연결 시 비번 인증 단계에서 무한 행. 죽인 세션이 **서버 측에서 즉시 해제 안 됨** → 슬롯 점유로 후속 로그인 대기. **쿨다운 둔 단일 연결은 0.2초로 성공**(반복 검증).
+- **해결책(검증됨)**: ① 연속 연결 금지(쿨다운) ② **`-o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o ConnectTimeout=15`**로 행 시 ~15초 자동 종료(200초 행 방지) ③ 단일 클린 연결. → `.up_hero2.exp`에 반영, 1회 성공.
+- **SSH 쉘 = 불가(SFTP-only)**: `ssh ... "cmd"` → **`exec request failed on channel 0`**(ForceCommand internal-sftp). 따라서 **rsync 불가**(원격 쉘 필요), 원격 lftp/uname 불가.
+- **lftp 경로 = 이 맥에선 인증 막힘**: lftp는 SFTP일 때 외부 `ssh`(connect-program)에 위임 → 비번 주입 필요. **키 불가(서버 password-only)** + **`sshpass` 즉시 `Permission denied`**(이 맥/서버 조합, 재확인). → **비대화식 인증 가능한 유일 수단 = `expect`로 openssh sftp에 비번 타이핑.** (lftp를 쓰려면 connect-program을 expect 래퍼로 감싸야 함 — 미구현.)
+- **재현용 스크립트(루트, `*.exp` gitignore)**: `.up_hero2.exp`(배포·ServerAlive), `.diag_auth.exp`(인증 타이밍), `.diag_shell.exp`(쉘 가부). **향후 모든 godo 배포는 ServerAlive 옵션 + 쿨다운 + 단일연결 원칙 적용.**
+- **남은 작업(서버 안정 후 2 put)**: `skin/main/index.html` → `/data/skin/front/moment/main/index.html`, `style.css` → `/data/skin/front/moment/img/home/style.css`. 업로드 스크립트 `.up_hero.exp` 작성·보존(루트, gitignore 대상). 스킨 템플릿 반영 ~20초.
+- **검증 명령**: `curl -s "https://12cut.co.kr/?z=$RANDOM" | grep -c "hero__scroll-hint"` → **0**이면 반영 완료.
+- *(검토 메모)* 멀티프레임 히어로라 스크롤 어포던스 상실 리스크는 사용자가 "완전 삭제"로 확정. 추후 약화형(작은 셰브론) 대안 여지 있음.
+
+#### 세션 기록 (2026-06-05 / 회원 페이지 헤더 장바구니 아이콘 → 홈 이동 버그 수정 — 배포·헤드리스 검증됨)
+- **증상**: 회원 페이지(`login.php`·`find_id.php` 등) **모바일**에서 상단 헤더 장바구니 아이콘 클릭 시 엉뚱하게 이동(`login.php`→홈 `/`, `find_id.php`→`login.php`). 데스크톱은 정상.
+- **★ 핵심 발견 1 — 장바구니는 `<a>`가 아니라 `<img onclick>`**: `global.js`가 헤더 `top_member_box`를 **로그인 상태·언어에 따라 통째로 재구성**한다. 서버 HTML의 `<a href="../order/cart.php">장바구니(0)</a>`는 사라지고, 실제로는 **`<img src="/dobuddy/imgs/icon_cart.png" onclick='location="../order/cart.php"'>`** (26~43px 아이콘)로 바뀜. MY 아이콘도 `<img onclick='location="../mypage/index.php"'>`. → curl(정적 HTML)만 보면 절대 못 잡음. **반드시 헤드리스로 post-JS DOM을 봐야 함**.
+- **★ 핵심 발견 2 — `_hdrBack` 뒤로가기 핸들러가 아이콘 클릭을 가로챔**: `custom.js afterRun()`의 회원페이지 ← 뒤로가기 핸들러가 `.header_top`에 바인딩, 조건이 **타깃 기준** `e.offsetX<34`. 장바구니가 작은 `<img>`라 클릭 시 offsetX가 거의 항상 34 미만 → `innerWidth<851`(모바일)에서 발동 → `stopImmediatePropagation` 후 `location.href=_hdrBack[1]`로 **인라인 onclick(cart) 이동을 덮어씀**. 데스크톱은 `innerWidth<851` 거짓이라 무발동(정상).
+- **2차 헛수정 교훈**: 1차로 `a[href*=order/cart.php]` 절대경로화 + 가드 `closest('a,button,input,select,label')` 추가했으나 **둘 다 빗나감**(장바구니는 `<a>` 아님·`<img>`라 가드 미포함). "정밀 검토" 요구로 헤드리스(playwright-core+chromium-headless-shell) 도입해 실측·재현 후에야 정체 규명.
+- **수정(`custom.js` 3곳)**:
+ 1. `$('.top_member_box img[onclick*="order/cart.php"]').attr('onclick','location="/order/cart.php"')` — 아이콘 onclick을 **절대경로**로 정규화(기존 `a[href]` 라인은 유지·무해).
+ 2. `_hdrBack` 일반 핸들러 + `/member/join.php` 핸들러: 트리거를 **타깃 offsetX → 헤더 기준 X**(`(e.clientX||0)-this.getBoundingClientRect().left < 44`)로 변경 + 제외 셀렉터에 `img,[onclick],.top_member_box` 추가. → 좌측 끝 화살표 영역만 발동, 우측 아이콘류는 절대 비발동.
+- **배포·검증**: SFTP `custom.js` 업로드(13409B). **헤드리스 클릭 실측으로 4/4 통과** — `login.php`·`find_id.php` × 모바일390·데스크톱1280 **전부 `/order/cart.php`** 이동 확인.
+- **잔여 확인(미완)**: 모바일 좌측 ← 화살표가 의도대로 동작하는지 검증 중 헤드리스에서 `about:blank`(=`history.back()`가 테스트 히스토리 맨 앞 about:blank로 회귀하는 **테스트 아티팩트**로 추정) 관찰. 화살표 트리거 지점(좌측<44px)은 변경 전후 동일하므로 **회귀 아님**으로 판단하나, 실기기/실히스토리(home→login 진입 후 ←)로 최종 육안 확인 권장. `.header_top` click 핸들러는 `(none)`(global.js)+`hdr`(우리) 2개 공존.
+- **도구 메모**: 헤드리스 환경 = `/tmp/hdrtest`(playwright-core, `unset PLAYWRIGHT_BROWSERS_PATH` 후 실행). probe 스크립트들로 post-JS DOM·elementFromPoint·실클릭 네비게이션 추적. **godo 헤더 디버깅은 이 방식이 정답**(curl 무력).
+
+#### 세션 기록 (2026-06-06 / 12cut 기본 언어 일본어 전환 — 배포·검증됨)
+- **요구**: `12cut.co.kr` 최초 접근 시 기본 언어를 일본어(`ja`)로 적용. 단, 사용자가 이후 `EN/KR/CN` 등 다른 언어를 선택하면 그 선택을 유지해야 함.
+- **1차 실수/원인**: `custom.js` 최상단에 `if(localStorage.$mylang!=='ja'){...location.reload()}` 형태로 넣어 **기본값(default)** 이 아니라 **항상 일본어 강제(force)** 가 됨. 결과: 사용자가 다른 언어로 바꿔도 다음 로드에서 다시 `ja`로 되돌아감.
+- **수정 원칙**: `localStorage.$mylang`이 없거나 기존 사용자에게 1회 기본값 마이그레이션이 필요한 경우에만 `ja`를 세팅. 이후에는 `localStorage.$mylang`을 신뢰한다. 마이그레이션 플래그는 `localStorage.$12cutDefaultLang='ja'`. 언어 사전 캐시(`localStorage.$lang`)는 1회 일본어 기본값 세팅 때만 제거해 `ja` 사전을 재수신하게 함.
+- **구현 위치**: `/dobuddy/12cut/custom.js` 전용. 공용 `global.js` 수정 금지. `main()`의 홈 언어 클릭은 `localStorage.$mylang||'ja'`, `afterRun()`의 body 언어 클래스/`#sel_lang` 값도 `localStorage.$mylang||'ja'` 기준으로 정렬.
+- **검증**: 라이브 `custom.js` curl 확인(`const _ldk='$12cutDefaultLang'`, `localStorage.$mylang||'ja'`, `var _cl=localStorage.$mylang||'ja'` 존재, 고정 `data-lang="ja"` 제거). Puppeteer 실측: 최초 접근은 `mylang=ja`·`$lang.lang=ja`·`body.ja`·`#sel_lang=ja`; 이후 영어 선택 후 리로드는 `mylang=en`·`$lang.lang=en`·`body.en`·`#sel_lang=en` 유지. `mypage/index.php`는 비로그인 상태에서 `/member/login.php`로 리다이렉트되지만 동일 공통 헤더/언어 셀렉트 경로에서 검증 완료.
+
+#### 세션 기록 (2026-06-06 / 마이페이지 모바일=BD2 정렬(오버라이드 제거) + 회원정보수정 스타일 배포·검증됨)
+- **요구 변천**: ① 마이페이지(`/mypage/index.php`) PC·모바일 Figma 반영 → ② "모바일 링크 오류·메뉴 허브" → ③ 결국 **"구조가 BD2와 동일하니 BD2를 그대로 반영"** 으로 전환(사용자가 BD2 계정 제공). PC는 BD2와 공통 좌측 메뉴 사용.
+- **★ 핵심 발견 — 모바일 허브는 `global-side.js`의 `#my_custom`이 이미 생성**: BD2 로그인 후 헤드리스(`puppeteer-core`, 시스템 Chrome)로 post-JS DOM·스크린샷 실측. 모바일에서 **보이는 레이아웃 = `#my_custom`**(global-side.js가 BD2식 메뉴 허브로 구성), 기존 `.mypage_main`은 `.sub_content` 안에서 **숨김**이 정상. → 12cut도 별도 커스텀 허브를 만들 필요 없음. BD2와 동일 동작은 **global 스크립트에 맡기면 끝**.
+- **★ 버그 원인 — 우리 오버라이드가 숨겨진 옛 콘텐츠를 되살림**: 12cut `custom.css`가 모바일에서 `.body-mypage .sub_content{display:flex!important}`로 강제 노출 → global이 숨긴 옛 `.mypage_main`이 `#my_custom`과 **중복 표시**되어 "링크 잘못/지저분" 증상. `custom.js`의 `case'/mypage/index.php'` 커스텀 허브 주입도 중복 유발.
+- **조치(제거가 정답)**: `custom.css`의 `.body-mypage`(index 전용: PC 2단 그리드·모바일 허브·`sub_content` 강제표시) 규칙 **전부 삭제**, `custom.js`의 `case'/mypage/index.php'` 블록 **전부 삭제**. → 마이페이지는 global 기본 렌더(BD2 동일)로 복귀. (검증: 라이브 `custom.css`에 `.body-mypage `(index) 매치 **0**.)
+- **회원정보수정(`.body-mypage-edit`) 함께 배포**: 다른 창에서 작성된 회원정보수정 페이지 스타일(로컬 `custom.css`에만 있던 델타)을 같은 배포에 포함. **공용 파일이라 덮기 전 라이브 재pull→diff** 결과 **차이가 `.body-mypage-edit`뿐(외주 변경 0)** 확인 후 업로드. 라이브=로컬 **바이트 일치(`cmp` IDENTICAL, 59,948B)**, `custom.js`도 바이트 일치·문법 OK.
+- **도구 메모**: `dev/cap_bd2.cjs`(BD2 로그인→`/mypage/index.php` DOM 덤프·스크린샷, `DESKTOP=1`로 1440 뷰포트 전환). 배포 스크립트 `.up_custom_mypage2.exp`는 `bye` 직후 `close`로 강제 종료(ServerAlive 행 방지). godo 헤더/마이페이지 진단은 curl 무력 → **헤드리스 post-JS DOM 필수**.
+- **잔여**: 회원정보수정 페이지의 **Figma 기준선 1:1 대조 미실시**(현재는 "로컬→라이브 일치" 상태). 기준 노드 확보 시 간격·`#F63237` 액센트 대조 권장. 외주 통지 대상에 본 `custom.css`/`custom.js` 변경분 추가.
+
+#### 세션 기록 (2026-06-06 / 회원정보수정 모바일 레이아웃 깨짐 수정 — 배포·검증됨)
+- **증상**: 실폰에서 `/mypage/my_page.php` 회원정보 수정 내부 페이지 모바일 레이아웃이 깨짐. 입력 필드 오른쪽이 화면 밖으로 밀리고, 비밀번호 설정 버튼/입력 필드 폭이 뷰포트와 맞지 않으며 카카오 플로팅 버튼이 휴대폰 입력 영역과 겹쳐 보임.
+- **원인 판단**: `.body-mypage-edit` 모바일 미디어쿼리에서 데스크톱 `#my_custom{width:1280px}` 계열 값을 충분히 해제하지 못하고, `#contents`와 `#my_custom`이 동시에 좌우 padding을 갖는 구조라 실제 폰에서 폭 계산이 불안정. `custom.css`의 모바일 컨테이너 책임이 혼재된 상태.
+- **수정(`custom.css` 한정)**: `@media (max-width:850px)` 안에서 `#container`·`.sub_content`·`.content_box`·`#contents`·`#my_custom`·`#formJoin`에 `width:100%`, `max-width`, `min-width:0`, `box-sizing:border-box`, `overflow-x:hidden`을 명시. `#my_custom`은 `padding:24px 0 50px`로 내부 중복 좌우 padding 제거, 폼 내부 `.f`는 `width:min(100%,343px)`로 중앙 정렬. `custom.js`는 미수정.
+- **배포·검증**: `.up_css.exp`를 ServerAlive+fail-fast+`close` 방식으로 갱신 후 `custom.css`만 SFTP 업로드. 원격 `ls -l /dobuddy/12cut/custom.css`에서 76,269B·mtime `Jun 6 10:01` 확인. 라이브 `https://12cut.co.kr/dobuddy/12cut/custom.css?z=...`에서 새 규칙(`width:100%!important;max-width:480px`, `width:min(100%,343px)`) 존재 확인. `ReadLints` 기준 CSS 진단 오류 없음.
+- **운영 메모**: 기존 `.up_css.exp`는 `expect eof` 대기와 서버 tarpit에 취약했음 → 이번에 `.up_custom_mypage2.exp`와 같은 fail-fast 패턴으로 개선. 전송 100%와 원격 `ls`가 보이면 성공으로 간주하고, `bye` 이후 세션이 남으면 `close`로 종료.
+
+#### 세션 기록 (2026-06-06 / 장바구니 `cart.php` Phase 1 Figma 수치·브랜드 교정 — 배포·헤드리스 검증됨)
+- **요구**: `/order/cart.php`를 Figma(browndust2 cart, PC `1786-13084`·모바일 `1786-11290`) 기준으로 정밀 반영. **앞으로 모든 페이지는 PC·모바일 2구조로 판단**(사용자 원칙). Figma는 rate limit 때문에 `user-figma` MCP(다른 토큰)로 우회.
+- **★ 구조 발견 — 2단 골격은 `global.js`가 이미 생성**: `#my_custom>.aside+.body`, `.cart-li`(상품행), `.cart-sumbox`(요약), `.btns`(버튼행)는 global이 모바일 폼으로 재구성. → **CSS로 본문만 시안 정렬**(마크업 생성 불필요). `.body` 직계 순서: `h2(장바구니)` → `div>h3(전체선택)+체크박스` → `.cart-div`(상품/`.list-msg`) → `.btns.border-gray`(삭제/비우기) → `.cart-sumbox`×2(`.only-krw`/`.only-currency`, 통화별 1개만 표시) → `.btns`(주문). 
+- **★ 헤드리스 필수**: cart는 curl로 상태 파악 불가(global 재구성·통화분기·빈/채움). `puppeteer-core`+시스템 Chrome으로 ① 상품 담기(`goodsNo=1000000000`, `#cartBtn` 클릭+dialog accept) ② post-JS DOM 실측 ③ 로컬 `custom.css`를 `addStyleTag`로 주입해 before/after·치수 검증. 게스트 카트 세션은 런마다 비므로 **검증 전 담기 단계 선행** 필수. 스크립트군 `/tmp/cartdiag/*.cjs`.
+- **Phase 1 적용(`custom.css` `.body-cart` 스코프, 라이브 AS-IS 교정)**:
+ - 썸네일 85×85·radius8·`object-fit:cover`(라이브 16px 미사이즈), 상품명 15/600 #000·옵션 12/500 #555·가격 16/600.
+ - 체크박스: godo `.check_s` 스프라이트 → **브랜드 커스텀(#F63237 on + 흰 체크마크)**. 전체선택(`for=allCheck1`)·행 체크 **통일**(`.body-cart .body label.check_s`).
+ - 요약박스: padding 15 균일·텍스트 #555·**결제예정금액 파랑(#0B84EC)→레드 #F63237**·적립 마일리지 녹색(#272) 중화.
+ - 버튼행: 라이브 음수마진(-3/-20)·`space-between` 과대간격 제거 → `display:flex;gap:10px;flex:1 1 0`로 **콘텐츠 폭 꽉 채움+50/50 균등**. 주문 CTA 검정→**레드(#F63237)**, 보조 주문 레드 아웃라인, 삭제/비우기(`.border-gray`)는 회색 아웃라인 유지. 공통 radius8.
+ - 모바일(≤850): 요약카드 radius15, `#my_custom` 좌우거터 16 균일.
+- **막판 2건 수정(이번 세션 / 라이브 검증됨)**:
+ 1. **삭제행↔결제박스 간격 0 → 30px**: `.cart-sumbox`에 `margin-top:30px`(Figma 섹션 간격 IKXQC3 gap 30). 헤드리스 실측 gap 30 확인(빈/채움 × PC/모바일 4케이스).
+ 2. **빈 카트 '전체선택' 댕글링 숨김**: 빈 상태(`.cart-div .list-msg` 존재)에선 체크박스 없이 "전체선택" 텍스트만 노출됐음. `.body-cart .body:has(.cart-div .list-msg)>div:has(>h3){display:none}` — `body>div:has(>h3)`가 전체선택 행만 유일 매칭. `:has` 라이브 지원 확인. 채운 카트는 정상 노출 유지(검증됨).
+- **배포·검증**: `.deploy.exp`(검증된 ServerAlive+fail-fast+`bye`후 `close` 헬퍼, `expect .deploy.exp <local> <remote>` 다중쌍 지원)로 `custom.css`(40KB) → `/dobuddy/12cut/custom.css` 1회 성공(인증 181ms, 100% 전송). 라이브 curl로 `margin-top:30px!important;padding:15px`·`list-msg)>div:has(>h3)` 두 규칙 확인. 헤드리스 4케이스(빈/채움×PC/모바일) gap30·전체선택 토글 전부 통과.
+- **Phase 2(미착수)**: 수량 스테퍼·컬러칩·상품별 배송비 라인은 JS/백엔드 의존 → 별도. 사용자 선택 "나중에(먼저 수량변경 기능 유무 확인)".
+
+#### 세션 기록 (2026-06-06 / 회원정보 수정 재인증 화면 소셜 로고 교체 — 배포·검증됨)
+- **요구 정정**: 사용자가 업로드한 `assets/images/image 1.png`·`image 2.png`·`image 3.png`는 로그인 페이지가 아니라 **회원정보 수정(`/mypage/my_page.php`) 진입 전 재인증 화면**의 소셜 인증 로고 교체용이었음. 1차로 로그인 페이지 소셜 버튼에 잘못 적용 → 즉시 원복.
+- **이미지 매핑·배포**: `image 1.png`=Kakao, `image 2.png`=Naver, `image 3.png`=Facebook. 명확한 이름으로 복제 후 `/dobuddy/12cut/sns-kakao.png`, `/dobuddy/12cut/sns-naver.png`, `/dobuddy/12cut/sns-facebook.png`에 SFTP 업로드. 라이브 3개 파일 모두 200 확인.
+- **최종 적용 범위**: 로그인 페이지는 기존 상태 유지(풀폭 Facebook 파란 버튼+SVG, 하단 Kakao/Naver 원형 아이콘 유지). `custom.js`의 `_reauth()` 안에서만 재인증 화면 내 `img[alt/src*="kakao|naver|facebook"]`을 새 `/dobuddy/12cut/sns-*.png`로 교체. `custom.css`는 `.body-reauth img[src*="/dobuddy/12cut/sns-"]` 스코프로만 크기 제어.
+- **재인증 화면 스타일 현황**: 기존 godo 재인증 레이아웃 유지. 하단 버튼(`취소`/`인증하기`)만 12cut 레드 체계 유지. `.c-red` 강조 텍스트는 다국어 공통으로 검정(`#1A1A1A`) 오버라이드. 카카오 로고를 감싸던 보더는 `.cut-kakao-plain{border:none;background:none;box-shadow:none}`로 제거.
+- **로고 정렬·크기 최종값**: 재인증 로고 부모 `.cut-kakao-plain`은 `display:flex;align-items:center;justify-content:center;text-align:center`. 새 소셜 로고는 `max-width:180px`, `height:42px`, `margin:0 auto`, `object-fit:contain`. 라이브 CSS에서 `max-width:180px!important;height:42px!important` 확인 완료.
+- **검증/주의**: 재인증 화면은 로그인 세션 필요로 curl 정적 HTML만으로 최종 DOM 확인이 어려움. 변경 검증은 라이브 `custom.css`/`custom.js` 마커 및 이미지 200으로 확인. 실기기/로그인 상태에서 최종 육안 확인 권장. 향후 이 화면 소셜 로고 수정 시 **로그인 페이지가 아니라 `.body-reauth` 스코프만 건드릴 것**.
+
+#### 세션 기록 (2026-06-06 / 중문 폰트 GenSenRounded 적용 범위 보정 — 배포·검증됨)
+- **요구**: 12cut 중문 폰트가 예쁘지만 가독성이 낮아, 일문 `Zen Maru Gothic`과 결이 비슷한 둥근 고딕 계열로 교체. 선택안은 **3번 `GenSenRounded` 계열**.
+- **최종 폰트**: `GenSenRounded2 TC` + `https://fontsapi.zeoseven.com/303/main/result.css`. `GenSenRounded2 TW`가 브랜드/현대 UI에는 더 적합하나 ZeoSeven `303/main/result.css`는 실제로 `GenSenRounded2 TC`만 내려줌(TW는 OTF 원본을 받아 웹폰트 분할/자가호스팅 필요). 기존 `ZCOOL KuaiLe`는 장식용 디스플레이 폰트라 본문·버튼·주문/회원 UI 가독성이 낮아 제거.
+- **반영 파일(공통/홈)**: `custom.js`의 `zh` 폰트 로더, `custom.css`의 `body.zh` 폰트 패밀리, 홈 `script.js`의 `zh` 폰트 로더, 홈 `style.css`의 `:lang(zh)` 폰트 변수 변경. 실기기 로드 타이밍/캐시 보강을 위해 `custom.css`와 홈 `style.css` 최상단에 `@import url("https://fontsapi.zeoseven.com/303/main/result.css");` 추가. 홈 스킨 `skin/main/index.html`은 `style.css?v=6→v=7` 캐시버스팅.
+- **★ 실수 원인 — 편집기 별도 로더 누락**: 사용자가 확인한 화면은 상품상세가 아니라 **`/dobuddy/12cut/12cutEditor.html` 편집기**였음. 편집기는 `custom.js`/`custom.css` 체인이 아니라 자체 `applyEditorFont()`에서 `zh: ["'Noto Sans SC'", Google Fonts]`를 로드하므로 공통/홈 배포만으로는 바뀌지 않음. → `editor/12cutEditor.html`의 `zh` 매핑도 `GenSenRounded2 TC`/ZeoSeven으로 변경해 `/dobuddy/12cut/12cutEditor.html`에 SFTP 배포.
+- **운영 규칙(재발 방지)**: 언어/폰트 변경 시 범위를 반드시 ① 공통 고도 페이지(`/dobuddy/12cut/custom.js`, `custom.css`) ② 홈 랜딩(`script.js`, `style.css`, `skin/main/index.html` 캐시버전) ③ **스토리 편집기(`editor/12cutEditor.html`)** 로 나눠 점검·배포한다. 사용자가 스크린샷으로 확인하는 화면이 편집기면 공통 파일 검증만으로 "반영됨"이라고 판단하지 말 것.
+- **검증**: 라이브 `custom.js`/`custom.css`/홈 CSS/편집기에서 `ZCOOL KuaiLe`·`Noto Sans SC` 제거 및 `GenSenRounded2 TC` 존재 확인. Puppeteer 실측: 상품상세 `/goods/goods_view.php?goodsNo=1000000000`에서 `body.zh`·`商品总价` 계산 폰트 `"GenSenRounded2 TC", "Pretendard Variable", Pretendard, sans-serif`, `document.fonts.check(...)=true`; 편집기 `/dobuddy/12cut/12cutEditor.html`에서 `body.cut12.zh`·`创建你的故事` 계산 폰트 `"GenSenRounded2 TC", Pretendard, sans-serif`, `document.fonts.check(...)=true`. 배포 직후 `urllib` 한 번은 stale 응답(`Noto Sans SC`)을 받았으나 `Cache-Control: no-cache` 반복 확인에서 새 파일만 수신(고도/CDN 엣지 전파 지연).
+- **리스크/후속**: 현재는 외부 ZeoSeven Fonts API 의존. 12cut 홈 단일소스/자사 인프라 원칙과 완전히 맞추려면 `GenSenRounded2 TW` 또는 선택 폰트를 직접 woff2 분할해 `/dobuddy/12cut/` 또는 스킨 에셋 경로에 자가호스팅하는 Option B 검토.
+
+#### 세션 기록 (2026-06-06 / 모바일 레일 통일 + 마이페이지 탭·헤더 보정 — 배포·검증됨)
+- **요구**: 로그인·회원가입·장바구니·결제하기·마이페이지 메뉴 전반의 모바일 좌우 마진을 정밀 분석 후 일관화. 이후 마이페이지 메뉴별로 남은 안쪽 마진, FAQ/주문기록 상단 탭 wrap, 1:1문의 헤더 잘림 및 탭 우측 잘림을 추가 보정.
+- **모바일 레일 기준 확정(Option A)**: 390px 뷰포트 기준 **좌우 16px / 콘텐츠 358px**를 기본 레일로 채택. 결제하기 화면이 기준에 가장 가까웠고, 로그인은 `.sub_content` 기본 `margin:4px` 때문에 20px, 회원가입 정보입력은 내부 `.f` 축소 때문에 30px, 장바구니는 `#contents 20px + #my_custom margin 16px` 중첩 때문에 36px로 들어가던 상태를 정리.
+- **반영(`custom.css`)**: `.body-login .sub_content/.content_box` 기본 마진 제거, `.body-login .member_login_box` `max-width:480px`, `.body-join #formJoin .f` 모바일 100%, `.body-cart #contents{padding:0}` + `#my_custom margin 16px`, `.body-mypage-edit #formJoin .f` 모바일 100%. 라이브 헤드리스 검증: 로그인·약관·회원가입 정보입력·장바구니 본문/결제박스 모두 `left 16 / right 16 / width 358`, `scrollWidth 390`.
+- **마이페이지 메뉴별 핵심 원인**: `global-side.js`가 `/mypage/*`에서 `#contents`에 `#my_custom`을 prepend하고, 공통 `global.css`의 `#contents{padding:0 20px}` + `#my_custom{max-width:100vw-60}` + `#my_custom:not(.w600)>div{margin:0 10px}`가 중첩되어 메뉴별 콘텐츠가 더 안쪽으로 보였음. `custom.js`에서 `/mypage/*`에 `body-mypage`, `/mypage/mypage_qa.php`에 `body-mypage-qa` 클래스 부여. `custom.css`에서 `.body-mypage:not(.body-mypage-edit)` 스코프로 `#contents` padding 0, `#my_custom margin:0 16px 50px`, 내부 div margin 0, `.body/.content/.content_box` 100%로 정리. 회원정보수정(`.body-mypage-edit`)은 기존 전용 스타일 유지.
+- **상단 탭 스와이프**: FAQ(`/service/faq.php`)와 주문기록(`/mypage/order_list.php`)의 `.filter`를 모바일에서 `flex-wrap:nowrap`, `overflow-x:auto`, `-webkit-overflow-scrolling:touch`, `scroll-snap-type:x proximity`로 변경. `/service/faq.php` 진입 시 `body-faq` 클래스를 명시적으로 부여해 규칙 누락 방지. 라이브 FAQ 계측: `scrollWidth 625 > clientWidth 330`, `flex-wrap:nowrap`, `overflow-x:auto`.
+- **탭 우측 잘림 처리**: 스와이프 탭 레일 오른쪽 끝이 딱 잘려 보이지 않도록 `.body-faq #my_custom .filter,.body-mypage-order #my_custom .filter`에 `-webkit-mask-image`/`mask-image: linear-gradient(90deg,#000 0,#000 calc(100% - 34px),rgba(0,0,0,0))` 적용. 라이브 CSS 마커 확인 완료.
+- **1:1문의 헤더/본문 연결**: 첨부 실폰에서 `/mypage/mypage_qa.php` 상단 카드가 헤더에 붙어 잘려 보임. `.body-mypage-qa #my_custom{padding-top:22px}`로 다른 페이지와 시작 간격을 맞추고, `#header .header_top[data-h]` 및 `:before`에 하단 투명 그라데이션 배경을 적용해 스크롤 시 본문과 부드럽게 이어지도록 처리.
+- **검증/주의**: `custom.css`·`custom.js` SFTP 배포 완료, 라이브 마커 확인 완료, `ReadLints` 오류 없음. 마이페이지 일부 메뉴는 로그인 세션 의존이라 완전한 실계정 DOM 육안 확인은 사용자가 진행. 구조상 마진 보정은 12cut 전용 body class 스코프로 제한되어 결제/장바구니/회원가입 레일에는 추가 영향 없게 설계.
+
+#### 세션 기록 (2026-06-06 / 마이페이지 회원탈퇴·찜 빈상태 단순 번역 — 배포·검증됨)
+- **요구**: 마이페이지 회원탈퇴 문구가 번역되지 않음 → "단순 번역만" 진행. 이후 `/mypage/wish_list.php`의 `찜한 상품이 없습니다.`도 번역 누락 확인.
+- **원인**: `global-side.js`가 마이페이지 메뉴에서 `회원 탈퇴`를 `$t('회원 탈퇴')`로 렌더하지만 라이브 사전에는 `회원 탈퇴`/`회원탈퇴`/`탈퇴하기` 계열 키가 없었음. `/mypage/hack_out.php`는 `global-side.js` 전용 case가 없어 고도 원본 `.content/.content_box`를 그대로 붙이는 구조라 일반 텍스트는 자동 번역되지 않음. 찜 빈상태도 `ui.setGoodsList(...,'찜한 상품이 없습니다.')`가 `$t(empty)`를 호출하지만 사전 키가 없어서 한국어 폴백.
+- **반영(`custom.js`)**: `_cutPageTx` 로컬 보강맵 추가(en/ja/zh) + 마이페이지 사이드 메뉴 `회원정보 수정`/`회원 탈퇴` 텍스트 노드 치환. `/mypage/hack_out.php` case 추가(`body-mypage-withdraw`)로 제목·본문 텍스트 노드·input/button/a value/text·placeholder·`onclick/onsubmit` 속성 안의 한국어 confirm 문구를 단순 치환. `/mypage/wish_list.php` case 추가(`body-mypage-wish`)로 캐시가 남아도 `.list-msg`의 `찜한 상품이 없습니다.`를 즉시 치환.
+- **반영(사전)**: `scripts/fill_i18n.py` `NEW_KEYS`에 `회원정보 수정`, `회원 탈퇴`, `회원탈퇴`, `탈퇴`, `탈퇴하기`, `회원탈퇴 신청/안내/사유`, 확인/완료 문구, 탈퇴 안내문 후보, `찜한 상품이 없습니다.` 추가 → `scripts/i18n_out/{en,ja,zh}.html` 재생성 후 `/dobuddy/files/{en,ja,zh}.html` 업로드. 대표 번역: en `Delete Account`/`No wishlisted items.`, ja `退会`/`お気に入り商品がありません。`, zh `注销会员`/`暂无收藏商品。`.
+- **배포·검증**: PTY 고갈(`The system has no more ptys`)로 `expect spawn` 사용 불가. 대안으로 **PTY 없는 OpenSSH SFTP** 사용 성공: 임시 `SSH_ASKPASS` 스크립트 + `SSH_ASKPASS_REQUIRE=force DISPLAY=1 sftp -b` + 기존 ssh-rsa 옵션. `custom.js`, `en.html`, `ja.html`, `zh.html` 업로드 완료. `node --check custom.js` 통과, `ReadLints` 오류 없음, 라이브 `custom.js`에서 `body-mypage-withdraw`·`body-mypage-wish` 확인, 라이브 사전에서 신규 키 확인.
+- **주의**: 기존 브라우저의 `localStorage.$lang` 사전 캐시가 있으면 새 사전 키는 언어 전환 1회 또는 `localStorage.removeItem('$lang')` 후 반영됨. 단 이번 두 화면은 `custom.js` 로컬 보강맵/후처리로 주요 문구를 즉시 치환하도록 보완함. 로그인 세션 의존 페이지(`/mypage/hack_out.php`)는 최종 DOM 육안 확인 권장.
+
+#### 세션 기록 (2026-06-06 / 마이페이지 1:1 문의 아이콘 소실 수정 — 배포·검증됨)
+- **증상**: 마이페이지 1:1 문의 메뉴/링크의 아이콘이 사라짐. 최근 1:1 문의 링크를 카카오톡 채널로 치환하는 로직과 마이페이지 메뉴 레일 보정 이후 발생.
+- **원인**: `custom.js`의 `_wireKakaoInquiry()`가 대상 링크에 `.text(_kakaoLabel)`을 호출해 링크 내부 HTML을 통째로 교체함. 이때 `global-side.js`가 만든 메뉴 링크 안의 `<img>`/아이콘 노드까지 삭제되어 텍스트만 남음. **CSS 문제가 아니라 JS가 DOM 자식 노드를 제거한 문제**.
+- **수정(`custom.js`)**: 1:1 문의 링크의 `href/target/rel` 치환은 유지하되, 링크에 자식 요소가 있으면 텍스트 노드만 제거 후 `_kakaoLabel`을 append하도록 변경. 자식 요소가 없는 일반 텍스트 링크만 기존처럼 `.text(_kakaoLabel)` 사용. → 아이콘 보존 + 라벨 통일 동시 달성.
+- **최종 UX 정책(사용자 확정)**: 화면 라벨은 **`1:1 문의`로 유지**한다. `카톡 상담` 등으로 문구를 바꾸지 않는다. 대신 클릭 대상은 카카오톡 채널 `http://pf.kakao.com/_MhWxkM`로 연결하고, 링크 클릭 경로는 반드시 `target="_blank"`/`rel="noopener"`로 **새창** 처리한다. 직접 URL(`/service/qa.php`, `/board/list.php?bdId=qa`, `/mypage/mypage_qa.php`) 진입은 브라우저 팝업 정책상 자동 새창이 막힐 수 있으므로 현재 탭 리다이렉트 허용.
+- **배포·검증**: `node --check custom.js` 통과, `ReadLints` 오류 없음. `expect` 기반 SFTP로 `/dobuddy/12cut/custom.js` 업로드(99199B, `Jun 6 16:15`) 완료. 라이브 `https://12cut.co.kr/dobuddy/12cut/custom.js?z=...`에서 `children().length`·`nodeType===3`·`append(_kakaoLabel)` 마커 확인 완료.
+- **재발 방지**: 메뉴/버튼/아이콘이 섞인 링크를 치환할 때 `.text()`·`.html()`로 전체 내용을 덮지 말 것. 특히 `global-side.js`가 만든 마이페이지 메뉴는 아이콘 노드를 포함할 수 있으므로, 라벨 변경은 **텍스트 노드만 조작**해야 함.
+
+#### 세션 기록 (2026-06-06 / 주문내역 주문취소 버튼 번역 누락 수정 — 배포·검증됨)
+- **증상**: `/mypage/order_list.php` 주문내역에서 상태 필터·본문은 다국어로 보이지만 각 주문 행의 **`주문취소` 버튼만 한국어로 잔존**. 첨부 화면 기준 EN 상태에서 `Order History` 하위 버튼이 `주문취소`로 표시됨.
+- **원인**: 주문내역 행 버튼은 고도/global 렌더 이후 원문 text/value로 남고, `custom.js`의 `/mypage/order_list.php` case는 `body-mypage-order`·헤더·이미지 다운로드 링크만 처리해 버튼 번역 후처리가 없었음. 사전에도 FAQ 문장 `주문취소 했는데 언제 환불되나요?`는 있었지만 버튼 단독 키 `주문취소`/`주문 취소`가 없었음.
+- **수정(`custom.js`)**: `_cutPageTx` 로컬 보강맵에 `주문취소`·`주문 취소` 추가(en `Cancel Order`, ja `注文キャンセル`, zh `取消订单`). `/mypage/order_list.php` case에서 `button`·`a`·`input[type=button|submit]`의 text/value가 `주문취소` 또는 `주문 취소`이면 `_ct()`로 즉시 치환하도록 300ms 후처리 추가. 기존 브라우저의 `localStorage.$lang` 캐시가 남아도 버튼은 즉시 교정됨.
+- **수정(사전)**: `scripts/fill_i18n.py` `NEW_KEYS`에 `주문취소`·`주문 취소` 추가 후 `scripts/i18n_out/{en,ja,zh}.html` 재생성. `/dobuddy/files/{en,ja,zh}.html`에도 SFTP 배포해 신규/캐시 없는 사용자는 사전 경로에서도 정상 번역.
+- **배포·검증**: `node --check custom.js` 통과, `ReadLints` 오류 없음. `expect .deploy.exp`로 `/dobuddy/12cut/custom.js`와 사전 3종 업로드(PTY 고갈로 sandbox `expect` 실패 후 `required_permissions:["all"]`로 성공). 라이브 `custom.js`에서 `주문취소` 마커 확인, 라이브 사전에서 en `Cancel Order`, ja `注文キャンセル`, zh `取消订单` 키 확인 완료. 업로드 직후 사전 HTTP 응답은 잠시 stale였으나 약 30초 후 새 키 반영 확인.
+
+#### 세션 기록 (2026-06-06 / 장바구니 배지 stale + 스토리 편집상품 리스트 드롭 수정 — 배포·헤드리스 검증됨)
+- **증상 2종**: ① 장바구니에 상품(요약 ₩490,000/1개)이 있는데 **리스트(상품 행)가 안 보임**(사용자 확인: 스토리 편집 상품). ② **로그아웃해도 헤더 장바구니 배지 숫자가 계속 유지**됨.
+- **★ 핵심 발견 — 리스트는 `ui.setCartList`가 렌더, `no` falsy면 행 드롭**: cart.php 리스트는 `global.js`의 `setCartList()`(319행)가 서버 원본 `.cart_cont_list tbody>tr`를 읽어 `.cart-li`로 변환(렌더된 `data-p="${p*q}-${dis}"` 포맷이 setCartList 고유 출력 → cart.php도 이 함수 사용 확정. 체크박스는 cart 전용 래퍼가 추가). 그런데 `no=tr.dataset.goodsno||d.goodsNo`가 falsy면 `return !no?''`로 **그 행을 통째로 빈 문자열 렌더** → 모든 행이 비면 `.list-msg` 폴백. **요약 금액은 별도 서버 소스라 남음** → "리스트만 빔 + 금액은 보임" 증상. 스토리 편집상품은 옵션(priceInfo) 기반이라 일부 상태에서 `no` 미해결.
+- **★ 핵심 발견 — 배지는 `localStorage.cartCnt` 영구 캐시**: 배지 카운트 = `ui.gdEtc.cartCnt` = **`localStorage.cartCnt`**(global.js 256·261~262행, sessionStorage 아님). goods API 응답에 `cartCnt`가 없으면(`r.cartCnt==undefined`) 기존 localStorage 값 유지 → **로그아웃해도 안 지워짐**. 실제 카운트 동기화는 `setCartList`(322행)가 도는 cart/order 페이지에서만.
+- **진단 방법(필수)**: cart는 통화분기·global 재구성·로그인 의존이라 **curl 무력 → 헤드리스(puppeteer-core+시스템 Chrome) post-JS DOM 필수**. 게스트로 편집기와 동일한 옵션 add(`/order/cart_ps.php`, `goodsNo[]=1000000000&optionSno[]=14`)는 **정상 렌더**됨(1·2개·KRW 모두) → "옵션상품이라 항상 드롭"은 아니고 **회원/특정 데이터 상태 한정**. 사용자 로그인 카트의 broken DOM은 게스트 권한으로 미재현. 스크립트군 `/tmp/cartdiag/*.cjs`.
+- **수정(`custom.js` 전용, 공용 global.js 무수정)**:
+  1. **리스트 드롭 근본 보정(`beforeRun`)**: `ui.setCartList`를 1회 래핑(`ui.__cutCartFix`). 호출 직전 `.cart_cont_list tbody>tr` 각 행에 `dataset.goodsno`가 없으면 ① 첫 input `data-goods-no` ② priceInfo JSON `goodsNo` ③ `a[href*=goodsNo=]` ④ 폴백 `1000000000`(편집기 고정 goodsNo) 순으로 채움. → global이 `no`를 해결해 **정상 행(체크박스·버튼·가격 포함)을 스스로 렌더**(마크업 복제 불필요). 이미 goodsno 있으면 skip = **정상 카트 무영향**(price 분기는 `d.goodsNo`(input dataset) 기준이라 미변경, `tr.dataset.goodsno`는 `no`에만 영향).
+  2. **배지 stale 보정(`afterRun`, `_isCutLoggedIn` 직후)**: 로그아웃 링크 클릭 시 `localStorage.removeItem('cartCnt')` + **비로그인(`!_isCutLoggedIn()`) 상태에서 cart/order 페이지 제외 시 캐시 제거 + 배지 빈값**. cart/order는 setCartList가 실제 행수로 동기화하므로 제외.
+- **검증(요청 가로채기 헤드리스)**: 수정본 `custom.js`를 `setRequestInterception`으로 라이브에 주입. ① cart.php 정상 카트: 행 정상 렌더(`li:1`, 중복 없음), 배지 stale 7→실제 1로 동기화. ② 비로그인 일반 페이지: 배지 ""·`cartCnt` 제거. (probe의 `window.custom`/`window.ui` false는 lexical 전역이라 생긴 false negative, 동작은 정상.) `_isCutLoggedIn`은 게스트 헤더의 `로그인` 링크로 false 반환 정상(헤더 공통 `주문조회` 텍스트로 오판 안 함).
+- **배포**: `node --check` 통과·`ReadLints` 0. 편집 전 로컬==라이브 동일(99,785B) 확인 후 `expect .deploy.exp custom.js /dobuddy/12cut/custom.js`(AUTHED 204ms·100%). 라이브==로컬 동일(101,804B), 마커 `__cutCartFix`×2·`click.cutCart`×1 확인.
+- **잔여/주의**: 사용자 실제 로그인 broken 카트는 미재현이라 **리스트 복구의 실효는 실기기 최종 확인 권장**(로직상 `no` 해결로 수복). 배지: **현재 이미 stale한 기존 사용자**는 비로그인 시 다음 새로고침에 클리어(또는 cart.php 방문 시 동기화). 게스트가 일반상품을 담은 경우 비-cart 페이지에서 배지가 잠시 빈값일 수 있으나 cart.php에서 실제값 복원(자가치유). **공용 파일 변경분 외주 통지 대상**(`custom.js`: setCartList 래퍼 + 배지 보정).
+
+#### 세션 기록 (2026-06-07 / 모바일 헤더 12cut 로고 크기 통일 — 배포·검증됨)
+- **증상**: 홈 모바일 헤더와 비홈 공통 모바일 헤더(`.cut-mobile-header`)의 12cut 로고 크기가 달라 보임. 직전 작업에서 위치·색상·장바구니 아이콘은 통일했지만, 로고 자체의 기준값이 서로 달랐음.
+- **원인**: 홈은 `style.css`의 `.nav__logo-img`가 `height:34px;width:auto` 기준으로 렌더되는 반면, 비홈 주입 헤더는 `custom.css`에서 `.cut-mobile-header__logo`/`img`를 `78px × 28px` 고정으로 둬 실제 높이가 6px 작았음. 같은 SVG라도 높이 기준이 다르면 헤더 내 존재감이 달라짐.
+- **수정(`custom.css` 한정)**: `.cut-mobile-header__logo`와 `.cut-mobile-header__logo img`를 모두 `height:34px!important;width:auto!important`로 변경. 비홈은 흰 배경이므로 기존 `filter:brightness(0)!important`는 유지. 홈 `style.css`/스킨은 미수정.
+- **배포·검증**: `custom.css` 린트 오류 없음. PTY 없는 OpenSSH SFTP(`SSH_ASKPASS_REQUIRE=force`)로 `/dobuddy/12cut/custom.css` 업로드(93,335B·mtime Jun 7 00:42). 라이브 HTTP는 최초 1회 stale(88,901B) 후 약 20초 뒤 새 마커(`width:auto!important;height:34px!important`) 확인 완료.
+- **재발 방지**: 모바일 헤더 로고 기준은 홈·비홈 모두 **높이 34px + width auto**로 통일한다. 향후 헤더 수정 시 Figma의 박스 크기(`78×28`)를 그대로 고정하지 말고, 실제 홈 렌더 기준(`.nav__logo-img`)과 비교해야 함.
+
+#### 세션 기록 (2026-06-07 / 스토리 편집기 모바일 타이포·썸네일 보정 — 로컬 완료·배포 미확정)
+- **요구 흐름**: 상품 커스텀 편집기(`/dobuddy/12cut/12cutEditor.html`) 실폰 확인 중 ① 모바일 확대컷 이미지 깨짐 ② 하단 썸네일 스와이프/정렬 ③ step0/1 섬네일 세로 스크롤 막힘 ④ 모바일 텍스트가 커스텀 화면을 가림 ⑤ step2 하단 썸네일 레일 배경이 트리밍 화면과 겹침 ⑥ 알림 팝업 타이틀 과대 ⑦ 이미지 로드 후 썸네일 빨간 보더 2중 표시가 순차 보고됨.
+- **이미 반영·배포 확인된 편집기 CSS 변경**: `editor.css` 모바일에서 step0/1 세로 터치 허용(`body:has(#app[data-step="0/1"]){touch-action:pan-y}`), step0/1 하단 버튼 가림 방지 padding 추가, `.full` 모바일 확대컷은 `scale(3.3)` 유지 + `transform-origin:50% 8vh`로 정렬 복구. 모바일 타이포는 `font-size`뿐 아니라 `line-height`·`letter-spacing`까지 조정: 탭/안내문/하단 버튼/가이드 본문 기준값 추가, 영문·일문 안내문 자간 추가 압축(en `.tab-guide` `-0.035em`, ja `.tab-guide` `-0.03em`), 팝업 타이틀 1차 축소(`.alert .title` 17px → 이후 로컬에서 15.5px로 추가 축소).
+- **로컬 최신 수정(배포 미확정)**: `editor/12cutEditor.html`의 `.load` 반복 노드에 `imgs[i-1] && 'has-img'` 클래스 추가. `editor/editor.css`에서 `.load.has-img::before{background:none}`로 이미지가 들어간 슬롯의 빈 슬롯 SVG 보더를 제거해 2중 보더 방지. `#app[data-step="2"] .imgs`에 `background:rgba(255,255,255,.94)`, `border-top`, `box-shadow`, 상하 padding을 추가해 트리밍 화면과 하단 썸네일 레일을 시각적으로 분리. 모바일 `.alert .title`을 15.5px, en/ja는 15px로 추가 축소.
+- **검증 상태**: 로컬 기준 `ReadLints`는 `editor.css`·`12cutEditor.html` 모두 오류 없음. `rg`로 `has-img`, `.load.has-img::before`, `rgba(255,255,255,.94)`, `.alert .title{font-size:15.5px}`, en/ja 15px 마커 확인 완료.
+- **중요 — 배포 미완/미확정**: 직후 `expect .deploy.exp "editor/editor.css" "/dobuddy/12cut/editor.css" "editor/12cutEditor.html" "/dobuddy/12cut/12cutEditor.html"` 배포를 시도했으나 사용자가 중단하여 완료 여부와 라이브 반영을 확인하지 못함. 다음 재개 시 **먼저 라이브 `editor.css`/`12cutEditor.html`을 `?z=$RANDOM`으로 확인**하고, 로컬 최신 마커가 없으면 두 파일을 다시 SFTP 배포 후 라이브 검증해야 함.
+- **주의**: `12cutEditor.html`은 외주 공유 파일이므로 다음 배포 전 라이브 pull/diff 원칙 유지. 단, 이번 로컬 HTML 델타는 `.load` 클래스 배열에 `has-img`를 추가하는 1줄 변경이며, 보더 중복 제거를 위한 CSS와 쌍으로 동작함.
+
+#### 세션 기록 (2026-06-07 / 홈 푸터 공통화·모바일 레일·헤더 배지 정렬 — 배포·검증됨)
+- **요구 변천**: 홈 전용 푸터를 마이페이지/상품상세의 두버디 공통 푸터와 맞출지 검토 → 처음엔 홈 전용 푸터를 12cut식 신뢰 정보 구조로 확장했으나, 최종 지시는 **"홈화면의 푸터를 두버디 공통 푸터로 반영"**. → `skin/main/index.html`의 랜딩 전용 `<footer class="footer" id="footer">` 마크업을 제거하고 `{ # footer }` 토큰으로 붙는 고도 공통 `#footer_wrap`만 사용하도록 전환. 레퍼런스 `index.html`의 홈 전용 푸터도 제거.
+- **공통 레이어 영향 없음**: 공통 `_footer`/`global.css`/`global.js`는 수정하지 않음. 홈에서 공통 푸터를 숨기던 `custom.css`의 `.body-main #footer_wrap` 숨김만 해제. `#header_warp`, `.location_wrap`, `.side_cont`, `#foot-bar` 숨김은 유지.
+- **푸터 배경/간격 보정(`custom.css`)**: 공통 푸터를 홈에 노출하자 `#footer_wrap` 배경과 FAQ 아래 베이지 띠가 보임. `#footer_wrap`·`.content_info_wrap`·`#footer`·`.foot_list`·`.foot_cont`·`.foot_certify`는 `background:#fff!important`로 고정. 홈에서 `#container` 하단 여백과 `#footer_wrap`/`.content_info_wrap` 상단 margin/padding/border를 0으로 눌러 FAQ와 푸터 사이 빈 띠 제거.
+- **플로팅 아이콘 흰 박스 버그**: 처음 흰 배경 대상에 `.scroll_wrap`까지 포함해 우측 플로팅 아이콘 뒤에 흰 세로 박스가 생김. 원인은 고도 `scroll_wrap/#scroll_right` 컨테이너를 푸터 배경으로 오인한 것. → `.scroll_wrap`, `#scroll_left`, `#scroll_right`, `.right_banner`, `.scroll_right_cont`, `.btn_scroll_top`은 `background:transparent!important`로 분리. **향후 푸터 배경 보정 시 `.scroll_wrap`을 푸터로 취급하지 말 것.**
+- **모바일 푸터 레일 통일**: 실측상 모바일 390px에서 `#footer_wrap .foot_cont`가 좌우 약 20px(폭 351px)로 렌더되어 기존 12cut 모바일 레일(좌우 16px/콘텐츠 358px)과 불일치. `@media (max-width:850px){#footer_wrap .foot_cont{width:auto;margin-left:16px;margin-right:16px;box-sizing:border-box}}` 적용. 헤드리스 재측정: viewport 390, left 16, right 16, width 358, scrollWidth 390.
+- **모바일 헤더 장바구니 배지 위치 통일**: 홈은 `style.css`의 `.nav__cart-badge{top:0.5px;left:12px}`, 비홈은 `custom.css`의 `.cut-mobile-header__badge{top:-5px;left:12px}`라 배지가 위로 5.5px 올라가 보임. 비홈을 홈 기준에 맞춰 `top:.5px;left:12px`로 변경. 배지 크기/폰트/색은 기존 값 유지. 라이브 CSS 마커 확인 완료.
+- **배포·검증**: `expect .deploy.exp`로 `skin/main/index.html`→`/data/skin/front/moment/main/index.html`, `custom.css`→`/dobuddy/12cut/custom.css` 필요 시 반복 업로드. 라이브 홈 검증: 랜딩 전용 `.footer` 0개, 공통 `#footer_wrap` 1개, `CS CENTER`·`BANK INFO`·`주식회사 두버디` 노출. `custom.css` 라이브 마커 확인. `ReadLints` 오류 없음. 모바일 폭/배지는 `puppeteer-core` + 시스템 Chrome 헤드리스 실측.
+
+#### 세션 기록 (2026-06-07 / 모바일 하단 앱바 정렬·i18n·언어 즉시 반영 — 배포·검증됨)
+- **구현 위치**: `custom.js` `afterRun()` → `_cutBottomNav()`가 `.cut-bottom-nav`(Home / 12cut / My)를 `body`에 append. 스타일은 `custom.css` `@media (max-width:850px)` `.cut-bottom-nav` 블록(Figma 16-28059/16-28074 기준). 회원·결제·편집기 경로는 주입 차단.
+- **① 수직 정렬 보정(`custom.css`)**: 증상 = 앱바 70px 안에서 아이콘+텍스트 묶음이 위로 붙고 하단 여백만 과다. 원인 = `.cut-bottom-nav{align-items:flex-start}` + `.cut-bottom-nav__item{justify-content:flex-start}`. 수정 = 컨테이너 `align-items:center`, 아이템 `justify-content:center`. 라이브 `custom.css` 마커(`align-items:center!important`·`justify-content:center!important`) 확인.
+- **② 메뉴 텍스트 번역(`custom.js`)**: 증상 = `home`/`my` 영문 하드코딩으로 `$t()`·사전 미경유. 수정 = `_cutPageTx`에 `홈`/`마이` 추가(en `Home`/`My`, ja `ホーム`/`マイ`, zh `首页`/`我的`), 생성 시 `_ct('홈')`·`_ct('마이')` 사용. `12cut`은 브랜드명으로 고정 유지.
+- **③ 언어 변경 즉시 반영(`custom.js`)**: 증상 = 언어 전환 후 본문은 바뀌어도 앱바 라벨은 초기 로드 값 유지, 수동 새로고침 필요. 원인 = 앱바가 최초 1회만 생성·갱신 로직 없음. 홈은 `script.js` `applyLang()`이 랜딩만 in-place 갱신(새로고침 없음). 비홈 `#sel_lang`은 `global.js`가 `location.reload()`하지만 앱바는 별도 DOM이라 동기화 누락 시 stale.
+- **③ 수정 상세**: `_syncCutBottomNav()`(기존 nav span·aria-label 즉시 치환), `_applyCutLang(lang)`(`_cl`·body class·모바일 lang 버튼 active·앱바 sync). `_cl` 초기화를 `_cutMobileHeader()` 호출 **이전**으로 이동(모바일 lang active 상태 버그 동시 해소). 훅: `#sel_lang` `change.cutLang`, `.lang-btn`/`[data-lang]` `click.cutLangBtn`(`.cut-mobile-lang-btn` 제외), `.cut-mobile-lang-btn` `click.cutLangMobile`(sync 후 reload 유지).
+- **배포·검증**: `expect .deploy.exp`로 `custom.css`→`/dobuddy/12cut/custom.css`, `custom.js`→`/dobuddy/12cut/custom.js` 각 1회 성공. `node --check custom.js` 통과. 라이브 마커: CSS 정렬 규칙, JS `_syncCutBottomNav`·`_applyCutLang`·`click.cutLangBtn`. 엣지 전파 10~20초 지연 후 curl 확인.
+- **재발 방지**: 12cut 전용 JS 주입 UI(앱바·모바일 헤더 등)는 **언어 전환 시 `$t()`만 믿지 말고** `_applyCutLang` 또는 동등한 sync를 모든 lang 경로에 연결. 신규 앱바/푸터 커스텀 추가 시 생성+갱신 함수 분리 원칙 유지.
+
 #### 미해결/다음 작업
-- **★ i18n 사전 3종 업로드(최우선·1스텝)**: `i18n_pending/{en,ja,zh}.html` → `/dobuddy/files/`. 서버 안정 시 SFTP put만. (회원가입 placeholder 4개+아이디 안내 번역 반영.)
-- **마이페이지 리디자인(예정)**: `skin/mypage/index.html` 미러 확보됨. `.body-mypage` 스코프로 Figma 기반 스타일링 대기.
+- **장바구니 Phase 2(보류)**: 수량 스테퍼 UI 부재가 기능 결손인지 먼저 확인 → 컬러칩·상품별 배송비 라인. JS/백엔드 의존이라 CSS 범위 밖.
+- **장바구니 빈 상태(empty-state) 보강(검토)**: 빈 카트에서 전체선택 숨김 후 `장바구니` 헤드라인→"담긴 상품 없어요" 안내로 직결. Value First 관점 추천상품 CTA 등 empty-state 설계 여지.
+- **외주 통지(장바구니)**: `custom.css` `.body-cart` Phase 1 + 막판 2건 변경 → 공용 파일이라 diff 공유 필요.
+- **회원정보수정 Figma 대조(낮음)**: `.body-mypage-edit` 모바일 레이아웃 깨짐은 수정·배포 완료. 남은 것은 기준 Figma 노드와 1:1 대조(간격·컬러·`#F63237`)뿐.
+- **회원 헤더 ← 화살표 실기기 육안 확인(낮음)**: home→login 진입 후 모바일 좌측 화살표 탭 → home 복귀되는지. (헤드리스 about:blank는 아티팩트로 판단, 회귀 아님.)
+- ~~히어로 스크롤 인디케이터 삭제 배포~~ **완료(2026-06-05, 라이브 검증)**.
+- ~~i18n 사전 3종 업로드~~ **완료(2026-06-05 22:25, 라이브 검증)**: `i18n_pending/{en,ja,zh}.html` → `/dobuddy/files/`. `.up_i18n2.exp`(ServerAlive+fail-fast)로 1회 성공(인증 181ms, 3개 100% 전송). 검증: en `Postal code`·ja `郵便番号`·zh `邮政编码` 각 라이브 1. **단, 신규 키는 `localStorage.$lang` 캐시 때문에 기존 사용자는 언어 1회 전환(또는 `localStorage.removeItem('$lang')`) 후 반영됨**(신규/캐시없는 사용자는 즉시).
+- **★ 운영 노트(ServerAlive `expect eof` 함정)**: ServerAlive 옵션을 켜면 `bye` 후에도 keepalive로 `expect eof`가 늦게 닫혀 **전송 완료 후에도 수십 초~수분 행처럼 보임**(실제 파일은 이미 반영됨). `| grep`/`| tail` 버퍼링까지 겹치면 진행이 안 보임 → **진단 시 파이프 없이 raw 터미널 파일을 읽고, 100% 전송 라인이 뜨면 성공으로 간주**. 다음 개선: `bye` 직후 `close`로 강제 종료하거나 ServerAlive를 배포엔 빼고 행 감지는 `expect timeout`에만 의존.
+- ~~마이페이지(index) 리디자인~~ **방향 전환·완료(2026-06-06)**: 별도 커스텀 대신 **BD2와 동일하게 global(`#my_custom`) 렌더에 위임**(우리 오버라이드 전부 제거). `skin/mypage/index.html` 미러는 참고용 보존. 추가 커스텀이 필요하면 global 충돌 주의(`.sub_content` 강제표시 금지).
 - **Apple·Facebook 소셜 로그인 활성화**: 고도 관리자 > 회원 > SNS 로그인 설정에서 활성화 필요. 버튼 마크업·CSS는 준비됨.
 - **외주 통지(이번 세션 변경분)**: `custom.css`(19KB, 로그인·약관·폰트 추가)·`custom.js`(~10KB, 폰트·헤더·비활성화 추가)·i18n 사전 3개 변경 → 외주에 diff 공유 필요.
 - **외주 통지(편집기)**: 우리 재배포본(27,405B)이 외주 push본(25,714B)을 덮음 → **git 흡수 전 diff 대조 요청**(외주 의도 변경분 보호). 백업 `editor/12cutEditor.outsourced-20260602.bak`.

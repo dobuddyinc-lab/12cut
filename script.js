@@ -57,7 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
             faq_q6: 'Are my uploaded photos safe?',
             faq_a6: 'Your uploaded photos are automatically deleted from our servers after production. They are never used for any purpose other than production, and are never shared with third parties.',
             footer_tagline: '12 moments from the heart',
-            footer_contact: 'Contact', footer_terms: 'Terms', footer_privacy: 'Privacy Policy',
+            footer_contact: 'Contact', footer_terms: 'Terms', footer_privacy: 'Privacy Policy', footer_guide: 'Guide',
+            footer_cs_title: 'CS Center', footer_cs_hours: 'Weekdays 10:00-17:00', footer_cs_lunch: 'Lunch 12:30-13:30',
+            footer_company_title: 'Company', footer_company_name: 'Dobuddy Inc.', footer_company_address: '2F, 610 Musimdong-ro, Cheongwon-gu, Cheongju-si, Chungcheongbuk-do',
+            footer_ceo: 'CEO', footer_ceo_name: 'Minsoo Lim', footer_legal_title: 'Business Info',
+            footer_biz_no: 'Business Registration No.', footer_mail_order_no: 'Mail-order Sales Registration No.',
         },
         ko: {
             nav_gallery: '갤러리', nav_product: '제품', nav_how: '이용방법', nav_pricing: '가격',
@@ -101,7 +105,11 @@ document.addEventListener('DOMContentLoaded', () => {
             faq_q5: '선물 포장이 되나요?', faq_a5: '모든 12컷은 크래프트 박스에 담겨 배송됩니다. 선물용 메시지 카드를 추가하실 수 있으며, 별도의 선물 포장 옵션도 준비되어 있습니다.',
             faq_q6: '업로드한 사진은 안전한가요?', faq_a6: '업로드하신 사진은 제작 완료 후 서버에서 자동 삭제됩니다. 제작 목적 외에는 절대 사용되지 않으며, 제3자에게 공유되지 않습니다.',
             footer_tagline: '마음을 담는 12번의 순간',
-            footer_contact: '문의하기', footer_terms: '이용약관', footer_privacy: '개인정보처리방침',
+            footer_contact: '문의하기', footer_terms: '이용약관', footer_privacy: '개인정보처리방침', footer_guide: '이용안내',
+            footer_cs_title: '고객센터', footer_cs_hours: '운영시간 평일 오전 10시 - 오후 5시', footer_cs_lunch: '점심시간 오후 12시 30분 - 오후 1시 30분',
+            footer_company_title: '회사정보', footer_company_name: '주식회사 두버디', footer_company_address: '충청북도 청주시 청원구 무심동로 610(우암동) 2층',
+            footer_ceo: '대표', footer_ceo_name: '임민수', footer_legal_title: '사업자정보',
+            footer_biz_no: '사업자등록번호', footer_mail_order_no: '통신판매업신고번호',
         },
         ja: {
             nav_gallery: 'ギャラリー', nav_product: '製品', nav_how: '使い方', nav_pricing: '料金',
@@ -143,7 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
             faq_q5: 'ギフトラッピングはできますか？', faq_a5: 'すべての12cutはクラフトボックスに入れてお届けします。ギフト用メッセージカードを追加でき、特別なギフトラッピングオプションもご用意しています。',
             faq_q6: 'アップロードした写真は安全ですか？', faq_a6: 'アップロードされた写真は制作完了後、サーバーから自動的に削除されます。制作目的以外には一切使用されず、第三者に共有されることもありません。',
             footer_tagline: '心を込めた12の瞬間',
-            footer_contact: 'お問い合わせ', footer_terms: '利用規約', footer_privacy: 'プライバシーポリシー',
+            footer_contact: 'お問い合わせ', footer_terms: '利用規約', footer_privacy: 'プライバシーポリシー', footer_guide: 'ご利用ガイド',
+            footer_cs_title: 'カスタマーセンター', footer_cs_hours: '営業時間 平日 10:00-17:00', footer_cs_lunch: '昼休み 12:30-13:30',
+            footer_company_title: '会社情報', footer_company_name: '株式会社Dobuddy', footer_company_address: '忠清北道清州市清原区無心東路610 2階',
+            footer_ceo: '代表', footer_ceo_name: 'イム・ミンス', footer_legal_title: '事業者情報',
+            footer_biz_no: '事業者登録番号', footer_mail_order_no: '通信販売業申告番号',
         },
         zh: {
             nav_gallery: '画廊', nav_product: '产品', nav_how: '使用方法', nav_pricing: '价格',
@@ -185,7 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
             faq_q5: '可以礼品包装吗？', faq_a5: '所有12cut均以牛皮纸盒包装配送。可以添加礼品留言卡，还提供特别的礼品包装选项。',
             faq_q6: '上传的照片安全吗？', faq_a6: '上传的照片在制作完成后会自动从服务器删除。除制作目的外绝不使用，也不会与第三方共享。',
             footer_tagline: '用心珍藏的12个瞬间',
-            footer_contact: '联系我们', footer_terms: '使用条款', footer_privacy: '隐私政策',
+            footer_contact: '联系我们', footer_terms: '使用条款', footer_privacy: '隐私政策', footer_guide: '使用指南',
+            footer_cs_title: '客服中心', footer_cs_hours: '工作日 10:00-17:00', footer_cs_lunch: '午休 12:30-13:30',
+            footer_company_title: '公司信息', footer_company_name: 'Dobuddy Inc.', footer_company_address: '韩国忠清北道清州市清原区无心东路610 2楼',
+            footer_ceo: '代表', footer_ceo_name: '林民秀', footer_legal_title: '营业信息',
+            footer_biz_no: '营业执照号', footer_mail_order_no: '通信销售备案号',
         },
     };
 
@@ -349,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadedFonts.add(lang);
         const fontUrls = {
             ja: 'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap',
-            zh: 'https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap',
+            zh: 'https://fontsapi.zeoseven.com/303/main/result.css',
         };
         const url = fontUrls[lang];
         if (!url) return;
@@ -383,6 +399,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => applyLang(btn.dataset.lang));
     });
+
+    const langSwitcher = document.querySelector('.lang-switcher');
+    const langToggle = document.querySelector('.nav__lang-toggle');
+    if (langSwitcher && langToggle) {
+        langToggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            langSwitcher.classList.toggle('is-open');
+        });
+        document.addEventListener('click', (event) => {
+            if (!langSwitcher.contains(event.target) && !langToggle.contains(event.target)) {
+                langSwitcher.classList.remove('is-open');
+            }
+        });
+        langSwitcher.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => langSwitcher.classList.remove('is-open'));
+        });
+    }
+
+    const cartBadge = document.querySelector('.nav__cart-badge');
+    if (cartBadge) {
+        const cartCount = Number.parseInt(window.localStorage?.getItem('cartCnt') || '0', 10);
+        cartBadge.textContent = cartCount > 0 ? String(cartCount) : '';
+    }
 
     // ===== NAV SCROLL EFFECT =====
     const nav = document.getElementById('nav');
