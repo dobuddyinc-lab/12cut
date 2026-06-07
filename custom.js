@@ -23,8 +23,10 @@ const custom={
             var rows=document.querySelectorAll('.cart_cont_list tbody>tr');
             for(var i=0;i<rows.length;i++){
               var tr=rows[i];
+              var inp=tr.querySelector('input');
+              if(!inp){if(tr.parentNode)tr.parentNode.removeChild(tr);continue;}
               if(tr.dataset.goodsno)continue;
-              var inp=tr.querySelector('input'),dno=inp&&inp.dataset?inp.dataset.goodsNo:'';
+              var dno=inp&&inp.dataset?inp.dataset.goodsNo:'';
               if(!dno){var pi=tr.querySelector('[name^="priceInfo"]');if(pi){try{dno=(JSON.parse(pi.value)||{}).goodsNo;}catch(e){}}}
               if(!dno){var a=tr.querySelector('a[href*="goodsNo="]');if(a){var m=(a.getAttribute('href')||'').match(/goodsNo=(\d+)/);if(m)dno=m[1];}}
               if(!dno)dno='1000000000';
@@ -136,11 +138,15 @@ const custom={
     var _isCutLoggedIn=function(){var $b=$('.top_member_box'),t=$b.text().replace(/\s/g,'').toUpperCase();if($b.find('a[href*="logout"],[onclick*="logout"]').length||t.indexOf('LOGOUT')>-1||t.indexOf('로그아웃')>-1)return true;if($b.find('a[href*="login.php"],[onclick*="login.php"]').length||t.indexOf('LOGIN')>-1||t.indexOf('로그인')>-1)return false;if($b.find('a[href*="mypage/"],[onclick*="mypage/"]').length||t.indexOf('MYPAGE')>-1||t.indexOf('注文照会')>-1||t.indexOf('주문조회')>-1)return true;return false;};
     // 장바구니 배지 stale 보정: localStorage.cartCnt가 로그아웃 후에도 안 지워져 배지가 남는 문제. 로그아웃 클릭 시 + 비로그인 상태(cart/order 페이지 제외)에서 캐시 제거. cart/order는 setCartList가 실제 행수로 동기화하므로 건드리지 않음.
     try{
-      var _clearCutCartBadge=function(){try{localStorage.removeItem('cartCnt');}catch(e){}if(window.ui&&ui.gdEtc)ui.gdEtc.cartCnt=0;$('.nav__cart-badge').text('');$('li[data-n]').attr('data-n','');};
+      var _dropCutCartCnt=function(){try{localStorage.removeItem('cartCnt');localStorage.cartCnt='';localStorage.removeItem('cartCnt');}catch(e){}};
+      var _getCutCartCnt=function(){var n=parseInt($('li[data-n]').first().attr('data-n'),10)||0;if(!n&&window.ui&&ui.gdEtc)n=Number(ui.gdEtc.cartCnt||0)||0;if(!n){try{n=Number(localStorage.cartCnt||0)||0;}catch(e){}}return n>0?n:0;};
+      var _syncCutCartBadges=function(){var allowed=location.pathname==='/order/cart.php'||location.pathname==='/order/order.php'||_isCutLoggedIn(),n=allowed?_getCutCartCnt():0,txt=n>0?String(n>9?'9+':n):'';$('.nav__cart-badge,.cut-mobile-header__badge').text(txt);$('li[data-n]').attr('data-n',txt);};
+      var _clearCutCartBadge=function(){_dropCutCartCnt();if(window.ui&&ui.gdEtc)ui.gdEtc.cartCnt=0;$('.nav__cart-badge,.cut-mobile-header__badge').text('');$('li[data-n]').attr('data-n','');};
       $('.top_member_box').find('a[href*="logout"],[onclick*="logout"]').off('click.cutCart').on('click.cutCart',function(){_clearCutCartBadge();});
       if(location.pathname!=='/order/cart.php'&&location.pathname!=='/order/order.php'&&!_isCutLoggedIn()){
         _clearCutCartBadge();
       }
+      _syncCutCartBadges();setTimeout(_syncCutCartBadges,500);setTimeout(_syncCutCartBadges,1200);
     }catch(e){}
     $('#sel_currency option,#sel_lang option').removeAttr('disabled');
     var _cl=localStorage.$mylang||'ja';$('#sel_lang').val(_cl);$('body').removeClass('ko en ja zh').addClass(_cl);
@@ -174,7 +180,7 @@ const custom={
     var _hasCutEditorStoredIntent=function(){try{return localStorage.getItem(_cutEditorLoginKey)==='1'||sessionStorage.getItem(_cutEditorLoginKey)==='1';}catch(e){return false;}};
     var _clearCutEditorStoredIntent=function(){try{localStorage.removeItem(_cutEditorLoginKey);sessionStorage.removeItem(_cutEditorLoginKey);}catch(e){}};
     var _setCutEditorReturnUrl=function(){try{localStorage.setItem(_cutEditorReturnKey,location.href);sessionStorage.setItem(_cutEditorReturnKey,location.href);}catch(e){}};
-    var _openCutEditor=function(){if(innerWidth<=430||innerWidth*1.5<innerHeight)wrap.insertAdjacentHTML('beforeEnd','<iframe src="'+_cutEditorUrl+'" style="z-index:101;animation:.5s slide-up;background:#fff;position:fixed;inset:0;margin:0 auto;width:100%;height:100%;border:none"></iframe>');else wrap.insertAdjacentHTML('beforeEnd','<div style="background-color:rgba(0,0,0,.5);z-index:101;position:fixed;inset:0"><iframe src="'+_cutEditorUrl+'" style="animation:.5s slide-up;background:#fff;position:fixed;inset:0;margin:0 auto;aspect-ratio:.5;height:100%;border:none"></iframe></div>');window.closeEditor=function(){wrap.removeChild(wrap.lastChild);};};
+    var _openCutEditor=function(){if(innerWidth<=430||innerWidth*1.5<innerHeight)wrap.insertAdjacentHTML('beforeEnd','<iframe src="'+_cutEditorUrl+'" style="z-index:1000;animation:.5s slide-up;background:#fff;position:fixed;inset:0;margin:0 auto;width:100%;height:100%;border:none"></iframe>');else wrap.insertAdjacentHTML('beforeEnd','<div style="background-color:rgba(0,0,0,.5);z-index:101;position:fixed;inset:0"><iframe src="'+_cutEditorUrl+'" style="animation:.5s slide-up;background:#fff;position:fixed;inset:0;margin:0 auto;aspect-ratio:.5;height:100%;border:none"></iframe></div>');window.closeEditor=function(){wrap.removeChild(wrap.lastChild);};};
     var _goCutEditorLogin=function(){try{localStorage.setItem(_cutEditorLoginKey,'1');sessionStorage.setItem(_cutEditorLoginKey,'1');}catch(e){}_setCutEditorReturnUrl();location.href='/member/login.php?cutEditor=1';};
     var _hasCutEditorLoginIntent=location.search.indexOf('cutEditor=1')>-1||_hasCutEditorStoredIntent();
     if(location.pathname!=='/member/login.php'&&_hasCutEditorStoredIntent()){var _cutEditorIntentTries=0,_cutEditorIntentTimer=setInterval(function(){if(++_cutEditorIntentTries>80){clearInterval(_cutEditorIntentTimer);return;}if(_isCutLoggedIn()){clearInterval(_cutEditorIntentTimer);_clearCutEditorStoredIntent();location.href=location.origin+_cutEditorUrl;}},150);}
@@ -203,6 +209,41 @@ const custom={
       zh:{'구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!':'购物车中有无法购买的商品，请确认购物车商品！','구매확정 하시겠습니까?':'确认购买吗？','회원님의 정보를 안전하게 보호하기 위해 비밀번호를 다시 한번 확인해 주세요.':'为了安全保护您的信息，请再次确认密码。','홈':'首页','마이':'我的','12cut 이용을 위한':'为使用 12cut，','약관에 동의해주세요.':'请同意以下条款。','12cut의 모든 약관을 확인하고 전체 동의합니다.':'我已确认并同意 12cut 的所有条款。','구글로 로그인':'使用 Google 登录','Apple로 로그인':'使用 Apple 登录','Facebook으로 로그인':'使用 Facebook 登录','12cut 아이디로 로그인':'使用 12cut ID 登录','카카오로 로그인':'使用 Kakao 登录','네이버로 로그인':'使用 Naver 登录','회원가입':'注册','아이디 찾기':'找回账号','비밀번호 찾기':'找回密码','아이디 저장':'保存账号','또는':'或','비회원 주문조회 하기':'非会员订单查询','주문번호와 비밀번호를 잊으신 경우, 고객센터로 문의하여 주시기 바랍니다.':'如果忘记订单号或密码，请联系客服中心。','아이디, 비밀번호가 일치하지 않습니다. 다시 입력해 주세요.':'账号或密码不一致，请重新输入。','장바구니에 담겨있는 상품이 없습니다.':'购物车中没有商品。','회원정보 수정':'修改会员信息','회원정보 변경':'修改会员信息','회원 탈퇴':'注销会员','찜한 상품이 없습니다.':'暂无收藏商品。','주문취소':'取消订单','주문 취소':'取消订单','회원탈퇴':'注销会员','탈퇴':'注销','탈퇴하기':'注销会员','회원탈퇴 신청':'申请注销会员','회원탈퇴 안내':'注销会员须知','회원탈퇴 사유':'注销原因','비밀번호 확인':'确认密码','비밀번호':'密码','현재 비밀번호':'当前密码','취소':'取消','확인':'确认','완료':'完成','회원 탈퇴를 하시겠습니까?':'确定要注销会员吗？','회원탈퇴를 하시겠습니까?':'确定要注销会员吗？','탈퇴하시겠습니까?':'确定要注销会员吗？','탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'申请注销会员前，请务必确认相关说明。','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'注销后，个人信息及购买记录将按相关法规保存后销毁。','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'注销后会员信息将被删除，且无法恢复。','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'如有进行中的订单，会员注销可能会受到限制。'}
     };
     var _ct=function(s){return (_cutPageTx[_cl]&&_cutPageTx[_cl][s])||$t(s);};
+    var _cutImageBase='https://img.12cut.net/12cut_usr/cart/';
+    var _getCutOrderImageMeta=function(){
+      try{
+        var raw=sessionStorage.getItem('12cutOrderImage')||localStorage.getItem('12cutLastOrderImage');
+        var meta=raw?JSON.parse(raw):null;
+        var cartSno=sessionStorage.getItem('cartSno')||(meta&&meta.cartSno);
+        if(cartSno&&(!meta||String(meta.cartSno)!==String(cartSno))){
+          raw=localStorage.getItem('12cutOrderImage:'+cartSno);
+          meta=raw?JSON.parse(raw):{cartSno:String(cartSno)};
+        }
+        if(!meta||!meta.cartSno)return null;
+        meta.cartSno=String(meta.cartSno);
+        meta.thumbUrl=meta.thumbUrl||(_cutImageBase+meta.cartSno+'_thumb.png');
+        meta.printUrl=meta.printUrl||(_cutImageBase+meta.cartSno+'.png');
+        return meta;
+      }catch(e){return null;}
+    };
+    var _cutOrderImageText=function(meta){
+      if(!meta)return '';
+      return '[12CUT_IMAGE]\ncartSno: '+meta.cartSno+'\ncartThumb(before order): '+meta.thumbUrl+'\ncartPrint(before order): '+meta.printUrl+'\norderThumb(after order): https://img.12cut.net/12cut_usr/{ORDER_NO}_thumb.png\norderPrint(after order): https://img.12cut.net/12cut_usr/{ORDER_NO}.png';
+    };
+    var _injectCutOrderImageMeta=function(){
+      var meta=_getCutOrderImageMeta(),$form=$('#frmOrder');
+      if(!meta||!$form.length)return;
+      var text=_cutOrderImageText(meta);
+      var _upsertHidden=function(name,value){
+        var $el=$form.find('input[name="'+name+'"]').first();
+        if(!$el.length)$el=$('<input type="hidden">').attr('name',name).appendTo($form);
+        $el.val(value);
+      };
+      _upsertHidden('cut12CartSno',meta.cartSno);
+      _upsertHidden('cut12ImageThumb',meta.thumbUrl);
+      _upsertHidden('cut12ImagePrint',meta.printUrl);
+      _upsertHidden('cut12ImageNote',text);
+    };
     var _translateCutText=function(root,exclude){
       if(!_cutPageTx[_cl])return;
       root=root||document;
@@ -331,7 +372,7 @@ const custom={
       window.open=function(){
         var w=_cutOpen.apply(window,arguments),u=String(arguments[0]||'');
         if(w&&u.indexOf('postcode_search.php')>-1){
-          var _css='.post-search{font-family:\"Pretendard Variable\",Pretendard,\"Apple SD Gothic Neo\",sans-serif!important;font-size:14px!important}.post-search h1{height:56px!important;font-size:22px!important;background:#333342!important}.post-search .title{padding:14px 56px 14px 24px!important;box-sizing:border-box!important}.post-search .title-close{top:18px!important;right:22px!important}.post-search #search-form{padding:28px 24px 0!important}.post-search #address_search_name{height:48px!important;border:1px solid #F63237!important;border-radius:0!important;font-size:15px!important;padding:0 104px 0 16px!important}.post-search input.button{top:28px!important;right:24px!important;width:96px!important;height:48px!important;background:#F63237!important;border-color:#F63237!important;font-size:16px!important}.post-search .tip,.post-search .result{margin-left:24px!important;margin-right:24px!important}';
+          var _css='html,body{min-width:0!important;width:100%!important;margin:0!important;background:#fff!important;font-family:\"Pretendard Variable\",Pretendard,\"Apple SD Gothic Neo\",sans-serif!important;color:#333342!important}body,body *{box-sizing:border-box!important;font-family:inherit!important}.post-search,#wrap,#container,#contents,.content,.layer_wrap,.postcode_search{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;background:#fff!important;font-size:14px!important}.post-search h1,h1,.title{display:flex!important;align-items:center!important;min-height:56px!important;margin:0!important;padding:14px 56px 14px 24px!important;background:#333342!important;color:#fff!important;font-size:22px!important;font-weight:800!important;line-height:1.2!important;letter-spacing:-.04em!important}.title-close,.close,.btn_close{top:18px!important;right:22px!important;color:#fff!important}#search-form,form[name=\"frmPostcode\"],.postcode_search form{position:relative!important;padding:28px 24px 0!important;margin:0!important}#address_search_name,input[name=\"addressSearchString\"],input[name=\"keyword\"],input[type=\"text\"]{height:48px!important;width:100%!important;border:1px solid #F63237!important;border-radius:8px!important;background:#fff!important;font-size:15px!important;font-weight:600!important;padding:0 112px 0 16px!important;color:#111!important;box-shadow:none!important;outline:none!important}input.button,input[type=\"submit\"],button[type=\"submit\"],.btn_search{position:absolute!important;top:28px!important;right:24px!important;width:96px!important;height:48px!important;border:1px solid #F63237!important;border-radius:8px!important;background:#F63237!important;color:#fff!important;font-size:16px!important;font-weight:700!important;line-height:48px!important;text-align:center!important}.tip,.result,.postcode_result,.address_list,table{margin-left:24px!important;margin-right:24px!important;width:calc(100% - 48px)!important}.tip{margin-top:16px!important;color:#777!important;line-height:1.5!important}.result,.postcode_result,.address_list{margin-top:20px!important}table,tbody,tr,td{display:block!important;border:none!important}td{padding:10px 0!important;border-bottom:1px solid #eee!important;color:#333!important;font-size:14px!important;line-height:1.45!important}';
           var _injectPost=function(){try{var d=w.document;if(!d||d.getElementById('cut-postcode-style'))return;var s=d.createElement('style');s.id='cut-postcode-style';s.textContent=_css;d.head.appendChild(s);}catch(e){}};
           setTimeout(_injectPost,250);setTimeout(_injectPost,900);setTimeout(_injectPost,1600);
         }
@@ -351,6 +392,103 @@ const custom={
         $('body').addClass('body-orderform');
         $('.header_top').attr('data-h',$t('주문하기'));
         $('#frmOrder>a.btn.primary').text($t('결제하기'));
+        _injectCutOrderImageMeta();
+        $('#frmOrder').off('submit.cut12Image').on('submit.cut12Image',_injectCutOrderImageMeta);
+        $('#frmOrder>a.btn.primary,.body-orderform a.btn.primary,.body-orderform button[type="submit"],.body-orderform input[type="submit"]').off('click.cut12Image').on('click.cut12Image',_injectCutOrderImageMeta);
+        var _cutImageMetaTry=0,_cutImageMetaTimer=setInterval(function(){_injectCutOrderImageMeta();if(++_cutImageMetaTry>20)clearInterval(_cutImageMetaTimer);},250);
+        var _hideOrderMemo=function(){
+          var $memo=$('#frmOrder [name="orderMemo"]').first();
+          if(!$memo.length)return;
+          $memo.addClass('cut-order-memo-hidden').val('');
+          var $memoLabel=$memo.prevAll('b').first();
+          if($memoLabel.length&&/배송\s*메시지|配送メッセージ|Delivery Message|배송메세지/i.test($memoLabel.text().replace(/\s+/g,' ')))$memoLabel.addClass('cut-order-memo-hidden');
+        };
+        _hideOrderMemo();
+        var _cutMemoTry=0,_cutMemoTimer=setInterval(function(){_hideOrderMemo();if(++_cutMemoTry>20)clearInterval(_cutMemoTimer);},250);
+        var _copyOrdererToReceiver=function(){
+          var $same=$('#frmOrder input').filter(function(){
+            var id=this.id,$label=id?$('label[for="'+id+'"]').first():$(this).next('label');
+            return /주문자정보와\s*동일|注文者情報と同じ|Same as Customer|Same as orderer|同订购人信息/i.test($label.text());
+          }).first();
+          if($same.length&&!$same.prop('checked'))return;
+          var pairs=[
+            ['orderName','receiverName'],['orderCellPhone','receiverCellPhone'],['orderPhone','receiverPhone'],
+            ['orderZonecode','receiverZonecode'],['orderZipcode','receiverZipcode'],
+            ['orderAddress','receiverAddress'],['orderAddressSub','receiverAddressSub']
+          ];
+          pairs.forEach(function(p){
+            var $src=$('#frmOrder [name="'+p[0]+'"]').first(),$dst=$('#frmOrder [name="'+p[1]+'"]').first();
+            if($src.length&&$dst.length&&$src.val()&&(!$dst.val()||$dst.is('[readonly]')))$dst.val($src.val()).trigger('input').trigger('change');
+          });
+        };
+        var _activateSameAsCustomer=function($input){
+          if(!$input||!$input.length)return;
+          var el=$input.get(0);
+          if(!el)return;
+          if(!$input.data('cutSameActivated')){
+            $input.data('cutSameActivated',1).prop('checked',false);
+            el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+          }
+          $input.prop('checked',true).trigger('input').trigger('change');
+          _copyOrdererToReceiver();
+        };
+        var _simplifyShippingOptions=function(){
+          $('#shippingBasic,#shippingRecently').each(function(){
+            var $i=$(this),id=$i.attr('id');
+            $i.addClass('cut-hide-ship-option').prop('checked',false);
+            if(id)$('label[for="'+id+'"]').addClass('cut-hide-ship-option');
+            $i.next('label').addClass('cut-hide-ship-option');
+            $i.closest('.order-ship-opt').addClass('cut-hide-ship-option');
+          });
+          var $sg=$('#shippingBasic').closest('.form_element');
+          if(!$sg.length)$sg=$('#frmOrder .f2 .form_element').filter(function(){return $(this).find('input[type="checkbox"],input[type="radio"]').length>=2;}).first();
+          if(!$sg.length)return;
+          if(!$sg.hasClass('order-ship-done')){
+            $sg.addClass('order-ship-done');
+            $sg.children('input[type="checkbox"],input[type="radio"]').each(function(){
+              var $i=$(this),$l=$i.next('label');
+              if($l.length){$('<span class="order-ship-opt"></span>').insertBefore($i).append($i).append($l);}
+            });
+          }
+          var $opts=$sg.find('.order-ship-opt');
+          $opts.each(function(){
+            var $opt=$(this),txt=$opt.text().replace(/\s+/g,' ').trim();
+            if(/기본\s*배송지|최근\s*배송지|基本配送先|最近配送先|Default Address|Recent Address|默认地址|最近地址/i.test(txt))$opt.addClass('cut-hide-ship-option').find('input').prop('checked',false);
+          });
+          if($opts.length>=4)$opts.slice(0,2).addClass('cut-hide-ship-option').find('input').prop('checked',false);
+          var $visible=$opts.not('.cut-hide-ship-option');
+          var $sameOpt=$visible.filter(function(){return /주문자정보와\s*동일|注文者情報と同じ|Same as Customer|Same as orderer|同订购人信息/i.test($(this).text());}).first();
+          var $manualOpt=$visible.filter(function(){return /직접\s*입력|直接入力|手動入力|Manual Input|手动输入/i.test($(this).text());}).first();
+          $manualOpt.addClass('cut-manual-ship-option');
+          if($sameOpt.length){
+            if($manualOpt.length)$manualOpt.before($sameOpt);
+            else $sg.prepend($sameOpt);
+            _activateSameAsCustomer($sameOpt.find('input').first());
+          }else{
+            var $sameLabel=$sg.find('label').filter(function(){return /주문자정보와\s*동일|注文者情報と同じ|Same as Customer|Same as orderer|同订购人信息/i.test($(this).text());}).first();
+            var $manualLabel=$sg.find('label').filter(function(){return /직접\s*입력|直接入力|手動入力|Manual Input|手动输入/i.test($(this).text());}).first();
+            $manualLabel.addClass('cut-manual-ship-label');
+            if($sameLabel.length&&$manualLabel.length){
+              var $sameInput=$sameLabel.attr('for')?$('#'+$sameLabel.attr('for')):$sameLabel.prev('input');
+              var $manualInput=$manualLabel.attr('for')?$('#'+$manualLabel.attr('for')):$manualLabel.prev('input');
+              if($sameInput.length&&$manualInput.length){
+                $manualInput.before($sameInput.add($sameLabel));
+                $manualInput.prop('checked',false);
+                _activateSameAsCustomer($sameInput);
+              }
+            }
+          }
+          if($visible.length&&!$visible.find('input:checked').length){
+            var $same=$sameOpt.find('input').first();
+            if($same.length)_activateSameAsCustomer($same);
+            else $visible.find('input').first().prop('checked',true).trigger('change');
+          }
+          $sg.find('.js_shipping').remove();
+        };
+        _simplifyShippingOptions();
+        _copyOrdererToReceiver();
+        var _cutShipTry=0,_cutShipTimer=setInterval(function(){_simplifyShippingOptions();if(++_cutShipTry>20)clearInterval(_cutShipTimer);},250);
+        var _cutCopyTry=0,_cutCopyTimer=setInterval(function(){_copyOrdererToReceiver();if(++_cutCopyTry>20)clearInterval(_cutCopyTimer);},250);
         // 외화(비-KRW) 주문요약 금액 보정: 공용 global.js 외화 분기가 배송비를 1000 상수로 하드코딩(통화 무관 $1,000)하고
         // '총 상품 금액'에 할인액(0)을 잘못 표기하는 버그를 12cut 측에서만 오버라이드. KRW 결제는 global 정상 분기라 미개입.
         if(typeof sel_currency!=='undefined'&&sel_currency.selectedIndex){
@@ -374,16 +512,7 @@ const custom={
           var _cutSumN=0,_cutSumIv=setInterval(function(){_cutSumN++;_cutFixOrderSum();if(_cutSumN>=25)clearInterval(_cutSumIv);},200);
         }
         setTimeout(()=>{
-          var $sg=$('#shippingBasic').closest('.form_element');
-          if($sg.length&&!$sg.hasClass('order-ship-done')){
-            $sg.addClass('order-ship-done');
-            $sg.children('input[type="checkbox"],input[type="radio"]').each(function(){
-              var $i=$(this),$l=$i.next('label');
-              if($l.length){$('<span class="order-ship-opt"></span>').insertBefore($i).append($i).append($l);}
-            });
-            var $js=$sg.find('.js_shipping');
-            if($js.length)$sg.after($js);
-          }
+          _simplifyShippingOptions();
           if(!$('#frmOrder .f2 .order-addr-row').length){
             var $ab=$('#frmOrder .f2>b').filter(function(){return $(this).text().replace(/[\s*]/g,'')==$t('주소');}).first();
             if($ab.length){
@@ -399,6 +528,7 @@ const custom={
               }
             }
           }
+          _hideOrderMemo();
           var $mile=$('#frmOrder .useMileage');
           if($mile.length&&!$mile.hasClass('order-mileage-ready')){
             $mile.addClass('order-mileage-ready');
@@ -406,8 +536,40 @@ const custom={
             $mi.closest('div').addClass('order-mileage-box');
             $mile.find('*').addBack().contents().filter(function(){return this.nodeType==3&&this.nodeValue.replace(/\s/g,'')=='원';}).first().wrap('<span class="order-mileage-unit"></span>');
             $mile.find('label').addClass('order-mileage-label');
+            var mileText=$mile.text().replace(/\s+/g,' ');
+            var mileVal=parseInt((mileText.match(/보유\s*마일리지\s*:\s*([0-9,]+)/)||mileText.match(/Mileage\s*:\s*([0-9,]+)/)||[])[1]?.replace(/,/g,'')||'0',10)||0;
+            if(mileVal<=0)$mile.addClass('cut-mileage-empty');
+            $mile.find('button,a,input[type="button"]').filter(function(){return /전액\s*사용|全部使用|Use All|全额使用/i.test((this.value||$(this).text()).replace(/\s+/g,' '));}).addClass('cut-mileage-use-all');
+          }
+          var $payTabs=$('#my_custom .filter>a').filter(function(){return $(this).is(':visible');});
+          var onlyBank=$payTabs.length===1&&/무통장|Bank Transfer|銀行振込|银行转账/.test($payTabs.first().text().replace(/\s+/g,' ').trim());
+          if(onlyBank&&!$('.cut-payment-setup-notice').length){
+            var notice={
+              ko:'현재 카드/간편/해외 결제수단을 활성화 중입니다. 설정 완료 전까지는 무통장 입금만 임시로 표시됩니다.',
+              en:'Card, express, and international payments are being enabled. Bank transfer is shown temporarily until setup is complete.',
+              ja:'カード・かんたん決済・海外決済を有効化中です。設定完了までは銀行振込のみ一時的に表示されます。',
+              zh:'正在启用银行卡、快捷支付及海外支付。设置完成前将暂时仅显示银行转账。'
+            }[_cl]||'현재 카드/간편/해외 결제수단을 활성화 중입니다. 설정 완료 전까지는 무통장 입금만 임시로 표시됩니다.';
+            $('#my_custom .filter').after('<div class="cut-payment-setup-notice" style="margin:-12px 0 20px;padding:12px 14px;border:1px solid #FFE0E1;border-radius:10px;background:#FFF7F7;color:#F63237;font-size:13px;font-weight:600;line-height:1.45;letter-spacing:-.02em">'+notice+'</div>');
           }
         },0);
+        var _cutPayNoticeTry=0,_cutPayNoticeTimer=setInterval(function(){
+          if($('.cut-payment-setup-notice').length||++_cutPayNoticeTry>20)return clearInterval(_cutPayNoticeTimer);
+          var $payTabs=$('#my_custom .filter>a').filter(function(){return $(this).is(':visible');});
+          var onlyBank=$payTabs.length===1&&/무통장|Bank Transfer|銀行振込|银行转账/.test($payTabs.first().text().replace(/\s+/g,' ').trim());
+          if(!onlyBank)return;
+          var notice={
+            ko:'현재 카드/간편/해외 결제수단을 활성화 중입니다. 설정 완료 전까지는 무통장 입금만 임시로 표시됩니다.',
+            en:'Card, express, and international payments are being enabled. Bank transfer is shown temporarily until setup is complete.',
+            ja:'カード・かんたん決済・海外決済を有効化中です。設定完了までは銀行振込のみ一時的に表示されます。',
+            zh:'正在启用银行卡、快捷支付及海外支付。设置完成前将暂时仅显示银行转账。'
+          }[_cl]||'현재 카드/간편/해외 결제수단을 활성화 중입니다. 설정 완료 전까지는 무통장 입금만 임시로 표시됩니다.';
+          $('#my_custom .filter').after('<div class="cut-payment-setup-notice" style="margin:-12px 0 20px;padding:12px 14px;border:1px solid #FFE0E1;border-radius:10px;background:#FFF7F7;color:#F63237;font-size:13px;font-weight:600;line-height:1.45;letter-spacing:-.02em">'+notice+'</div>');
+          clearInterval(_cutPayNoticeTimer);
+        },200);
+        // 무통장
+        $('[name="bankSender"]').val($('[name="orderName"]').val());
+        $('[name="bankAccount"]').val(1);
         break;
       case '/member/join_agreement.php':
         setTimeout(()=>{
@@ -744,12 +906,15 @@ const custom={
           $('.aside a[href*="hack_out.php"]').each(function(){_setLinkText($(this),'회원 탈퇴');});
         },300);
         break;
-      case '/order/order.php':
-        $('[name="bankSender"]').val($('[name="orderName"]').val());
-        $('[name="bankAccount"]').val(1);
-        break;
       case '/order/order_end.php':
-        fetch('https://img.12cut.net/api.php',{body:`type=12cut_order&o=${location.search.split('orderNo=')[1].split('&')[0]}&c=${sessionStorage.getItem('cartSno')}`,headers:{'Content-Type':'application/x-www-form-urlencoded'},method:'POST'});
+        var _cutOrderNo=(location.search.match(/[?&]orderNo=([^&]+)/)||[])[1],_cutOrderMeta=_getCutOrderImageMeta(),_cutCartSno=sessionStorage.getItem('cartSno')||(_cutOrderMeta&&_cutOrderMeta.cartSno);
+        if(_cutOrderNo&&_cutCartSno){
+          var _cutOrderBody='type=12cut_order&o='+encodeURIComponent(_cutOrderNo)+'&c='+encodeURIComponent(_cutCartSno);
+          if(_cutOrderMeta)_cutOrderBody+='&thumb='+encodeURIComponent(_cutOrderMeta.thumbUrl)+'&print='+encodeURIComponent(_cutOrderMeta.printUrl);
+          fetch('https://img.12cut.net/api.php',{body:_cutOrderBody,headers:{'Content-Type':'application/x-www-form-urlencoded'},method:'POST'}).then(function(){
+            try{localStorage.setItem('12cutOrderImage:order:'+_cutOrderNo,JSON.stringify(_cutOrderMeta||{cartSno:_cutCartSno}));}catch(e){}
+          }).catch(function(e){console.warn('12cut_order map failed',e);});
+        }
         break;
       case '/mypage/order_list.php':
         $('body').addClass('body-mypage-order');
@@ -770,7 +935,12 @@ const custom={
           _openCutEditor();
         })
         setBtn($('.ord-box .primary'));
-        setTimeout(_=>setBtn($('.sticky-order .primary')),500);
+        setTimeout(_=>{
+          setBtn($('.sticky-order .primary'));
+          const colors={화이트:'#FFF',크림:'#FFF4EE','라이트 블루':'#EFF6FC',그린:'#019573',레드:'#DD3848','다크 그레이':'#3B3B47'};
+          $('.item_info_box h2>br')[0].outerHTML=`<div class="product__colors" role="group" aria-label="색상 선택">
+            ${Object.values(colors).map(c=>`<button type=button class="product__color" style="background:${c}"></button>`).join('')}</div>`;
+        },700);
 
         // gallary 관련 커스텀
         const start = () => {
@@ -880,6 +1050,7 @@ const custom={
     }
   }
 }
+window.custom=custom;
 $(_=>{
   $('.menus').hide();
 });
