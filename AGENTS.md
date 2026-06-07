@@ -429,10 +429,21 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **주의**: 사전 신규 키는 `localStorage.$lang` 캐시로 **기존 사용자는 언어 1회 전환 시 반영**(신규/캐시없는 사용자 즉시). `_cutPageTx`+MutationObserver가 stale 캐시도 즉시 치환. **외주 통지 대상**: `custom.js`·사전 3종.
 - **잔여(검토)**: 결제(`order.php`) 진입 단계의 검증 알림 팝업은 미점검(현재는 장바구니→주문 진입 구간만 커버). `jayw` 카트가 비어 실제 구매불가 팝업 자연 재현은 못 함(빈카트 메시지로 `$t` 메커니즘 검증).
 
+#### 세션 기록 (2026-06-07 / 주문서 외화 배송비 $1,000 버그 수정 — 배포·검증됨)
+- **증상**: 외화(예 USD) 결제 시 `/order/order.php` 주문요약에서 **총 배송비 `$1,000`**, **총 상품 금액 `$0`**, 최종결제 `$1,047`로 표기(상품가 $47). 사용자 스크린샷 수치와 코드가 100% 일치.
+- **★ 근본 원인 — 공용 `global.js` 외화 분기 버그(전 서비스 공통)**: `https://browndust2-goods.com/dobuddy/global.js` 156~164행, `if(sel_currency.selectedIndex)`(비-KRW) 분기에서 ① `let F=1000`(배송비 상수) 하드코딩 → `ui.fmPrice(F,1)`은 `r=1`이라 **환율 변환 안 함**(364행) → 통화 무관 "1,000"이 그대로(`$1,000`/`¥1,000`). ② "총 상품 금액"을 상품합 `T`가 아니라 **할인합 `D`**(=0)로 표기. 최종=`T−D+F`=47−0+1000=`$1,047`. KRW 결제는 정상 분기(165행+, godo 실 `totalDeliveryCharge` 사용)라 무영향. **bd2·vsquare·donut도 외화 결제 시 동일 증상**.
+- **★ `fmPrice` 의미(중요)**: `ui.fmPrice(p)`(r 미지정)=원화→선택통화 **변환**(fcurrency 우선, 없으면 `p*환율`). `ui.fmPrice(p,1)`(r=1)=**변환 없이** `ceil(p)`+통화기호 → 인자가 **이미 해당 통화 단위**여야 함. 외화 분기는 모두 `,1` 사용이라 F=1000이 그대로 1,000 통화로 찍힘.
+- **데이터 소스**: 상품합 `T`/할인 `D` = `.cart-li[data-p="환산가-할인율"]`(global `setCartList` 329행 생성, fcurrency 반영분). 배송비 = godo 표준 `#totalDeliveryCharge`(원화, KRW 분기 168행이 쓰는 동일 엘리먼트)를 `환율`로 환산 → **무료배송 규칙(5만원↑)도 그대로 반영**.
+- **수정(12cut 오버라이드, 공용 `global.js` 무수정)**: `custom.js`의 `case '/order/order.php'`에 `if(typeof sel_currency!=='undefined'&&sel_currency.selectedIndex)`일 때만 `_cutFixOrderSum` 추가. `.cart-li[data-p]` 합산으로 `T`/`D` 계산, `#totalDeliveryCharge`×`ui.gdEtc[통화]`로 배송비 환산, `.cart-sumbox`(총상품=`T`·총배송=환산·할인=`D`>0시·최종=`T−D+ship`)와 `.ord-p>b` 재렌더. setInterval 200ms×25회(5s)로 global의 1회 렌더 이후 안정 적용(idempotent). KRW(selectedIndex 0)는 미개입.
+- **배포·검증**: `node --check`·`ReadLints` 0 → `expect .deploy.exp custom.js /dobuddy/12cut/custom.js`(AUTHED 203ms·100%). 라이브 `custom.js` 117,140B·마커 `_cutFixOrderSum`×2 확인. **합성 하니스 검증**(global.js 실제 `fmPrice` 정의 + order.php DOM 복제, `/tmp/cartdiag/order_harness.cjs`): 배송비 ₩3,000→**총상품 $47/배송 +$3/최종 $50**, ₩0(무료)→**$47/+$0/$47**. (실 order.php E2E는 게스트 주문 `login.php?guestOrder=1` 인증+프로덕션 주문세션 생성 부작용이라 **의도적 미실시** → 실계정 로그인 상태 USD/JPY 1회 육안 확인 권장.)
+- **공용 파일 diff 주의**: 배포 전 라이브 pull→diff = 헝크 3개(① 약관 i18n 키 3줄, ② 내 주문요약 블록, ③ 약관페이지 `_ct`/`_cutPageTx` 블록). ②만 이번 작업, ①③은 **다른 작업창의 미배포 약관 i18n 보강분**(로컬 ⊇ 라이브, 외주 변경 0). 사용자 승인하에 **①②③ 함께 배포**.
+- **외주 통지 대상(P1)**: `global.js` 외화 분기 근본 수정(`F=1000` 하드코딩 + 총상품=`D` 오기) 요청 → 전 서비스 공통 해결. 12cut은 현재 우회 패치만 적용.
+
 #### 미해결/다음 작업
 - **장바구니 Phase 2(보류)**: 수량 스테퍼 UI 부재가 기능 결손인지 먼저 확인 → 컬러칩·상품별 배송비 라인. JS/백엔드 의존이라 CSS 범위 밖.
 - **장바구니 빈 상태(empty-state) 보강(검토)**: 빈 카트에서 전체선택 숨김 후 `장바구니` 헤드라인→"담긴 상품 없어요" 안내로 직결. Value First 관점 추천상품 CTA 등 empty-state 설계 여지.
 - **외주 통지(장바구니)**: `custom.css` `.body-cart` Phase 1 + 막판 2건 변경 → 공용 파일이라 diff 공유 필요.
+- **★ 외주 통지(주문서 외화 배송비 — 공용 `global.js` 버그, P1)**: `global.js` 156~164행 외화 분기의 `F=1000` 배송비 하드코딩(통화 변환 누락) + 총상품금액에 할인합(`D`) 오기 → bd2·vsquare·donut 포함 **전 서비스 외화 결제 공통 버그**. 12cut은 `custom.js` `_cutFixOrderSum`로 우회 패치만 적용. **근본 해결은 외주가 `global.js` 수정 필요** → 재현/원인/올바른 로직 diff 노트 공유 예정.
 - **회원정보수정 Figma 대조(낮음)**: `.body-mypage-edit` 모바일 레이아웃 깨짐은 수정·배포 완료. 남은 것은 기준 Figma 노드와 1:1 대조(간격·컬러·`#F63237`)뿐.
 - **회원 헤더 ← 화살표 실기기 육안 확인(낮음)**: home→login 진입 후 모바일 좌측 화살표 탭 → home 복귀되는지. (헤드리스 about:blank는 아티팩트로 판단, 회귀 아님.)
 - ~~히어로 스크롤 인디케이터 삭제 배포~~ **완료(2026-06-05, 라이브 검증)**.
