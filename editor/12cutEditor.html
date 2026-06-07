@@ -65,7 +65,7 @@
       :class="['fade-in',isFull&&'full']" style="padding-top:10vh">
       <div ref="preview" class="preview">
         <div class="cut" :data-i="i" v-for="i of 12" :key="i" :style="{transform:`rotate(${30*(i-1)}deg)`}">
-          <img ref="cut" :src="cuts[i-1].cut">
+          <img :src="cuts[i-1].cut">
         </div>
       </div>
       <img v-if="!isFull" style="margin-top:42vw;width:15vw" src="imgs/heart.png">
@@ -328,6 +328,76 @@
         const multiplier = width ? Math.max(1, (CUT_WIDTH * 2) / width) : 2;
         return this.fabric.toDataURL({ multiplier });
       },
+      loadImage(src) {
+        return new Promise(res => {
+          const img = new Image();
+          img.onload = () => res(img);
+          img.crossOrigin = 'Anonymous';
+          img.src = src;
+        });
+      },
+      loadFabricImage(src) {
+        return new Promise(res => fabric.Image.fromURL(src, img => res(img)));
+      },
+      fabricState(fabricObject) {
+        const { left, top, width, height, scaleX, scaleY, angle } = fabricObject;
+        return { left, top, width, height, scaleX, scaleY, angle };
+      },
+      fitFabricObjectToMask(fabricObject) {
+        const mask = this.trimMask();
+        const scale = Math.max(mask.width / fabricObject.width, mask.height / fabricObject.height);
+        fabricObject.scale(scale);
+        fabricObject.left = mask.left + (mask.width - fabricObject.width * scale) / 2;
+        fabricObject.top = mask.top + (mask.height - fabricObject.height * scale) / 2;
+        return fabricObject;
+      },
+      async commitCurrentCut(index = this.selIdx) {
+        if (!this.fabric || !this.fabric.getObjects().length || !this.cuts[index]) return;
+        const fabricObject = this.fabric.getObjects()[0];
+        this.cuts[index].fabric = this.fabricState(fabricObject);
+        this.cuts[index].cut = await this.renderFabricCut(fabricObject, this.cuts[index].src);
+        this.$forceUpdate();
+      },
+      async renderFabricCut(fabricObject, src) {
+        const canvas = this.$refs.canvas;
+        canvas.width = CUT_WIDTH;
+        canvas.height = CUT_HEIGHT;
+        const ctx = canvas.getContext('2d');
+        const img = await this.loadImage(src);
+        const mask = this.trimMask();
+        ctx.clearRect(0, 0, CUT_WIDTH, CUT_HEIGHT);
+        ctx.save();
+        ctx.scale(CUT_WIDTH / mask.width, CUT_HEIGHT / mask.height);
+        ctx.translate(-mask.left, -mask.top);
+        const matrix = fabricObject.calcTransformMatrix();
+        ctx.transform(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]);
+        ctx.drawImage(img, -fabricObject.width / 2, -fabricObject.height / 2, fabricObject.width, fabricObject.height);
+        ctx.restore();
+        return canvas.toDataURL();
+      },
+      async renderCut(cut) {
+        if (!cut) return '';
+        const fabricObject = await this.loadFabricImage(cut.src);
+        if (cut.fabric) fabricObject.set(cut.fabric);
+        else this.fitFabricObjectToMask(fabricObject);
+        cut.fabric = this.fabricState(fabricObject);
+        cut.cut = await this.renderFabricCut(fabricObject, cut.src);
+        return cut.cut;
+      },
+      async commitAllCuts() {
+        await this.commitCurrentCut();
+        for (const cut of this.cuts) await this.renderCut(cut);
+        this.$forceUpdate();
+      },
+      async drawCuts(ctx, w, cutW, cutH) {
+        for (const cut of this.cuts) {
+          const img = await this.loadImage(cut.cut || cut.src);
+          ctx.drawImage(img, w / 2 - cutW / 2, w * 0.03, cutW, cutH);
+          ctx.translate(w / 2, w / 2);
+          ctx.rotate(Math.PI / 180 * 30);
+          ctx.translate(-w / 2, -w / 2);
+        }
+      },
       async toast(html) {
         if (this.toastHtml) {
           clearTimeout(toastTimer);
@@ -381,25 +451,21 @@
       },
       // 비어있으면 업로드 차있으면 순서선택 토글
       async sel(i) {
-        this.selIdx = i;
         if (this.step == 2) {
+          if (this.selIdx !== i) await this.commitCurrentCut();
+          this.selIdx = i;
           this.fabric.remove(...this.fabric.getObjects());
-          let img = await new Promise(res => fabric.Image.fromURL(this.cuts[i].src, img => res(img)));
-          let { width: w, height: h } = this.fabric;
+          let img = await this.loadFabricImage(this.cuts[i].src);
           const xywh = this.cuts[this.selIdx].fabric;
           if (xywh) img.set(xywh);
-          else {
-            const mask = this.trimMask();
-            const scale = Math.max(mask.width / img.width, mask.height / img.height);
-            img.scale(scale);
-            img.left = mask.left + (mask.width - img.width * scale) / 2;
-            img.top = mask.top + (mask.height - img.height * scale) / 2;
-          }
+          else this.fitFabricObjectToMask(img);
           this.fabric.add(img);
           this.fabric.setActiveObject(img);
           this.selImg=img;
+          await this.commitCurrentCut(i);
           return;
         }
+        this.selIdx = i;
         const img = this.imgs[i];
         if (!img) return this.$refs.file.click();
         else if (this.step == 0) {
@@ -409,33 +475,6 @@
         i = this.cuts.indexOf(img);
         if (i > -1) this.cuts.splice(i, 1);
         else this.cuts.push(img);
-      },
-      // 트리밍 후 중앙부로 크롭 (편집기를 거치지 않은 케이스는 cover)
-      cropCut(src, fromFabric) {
-        return new Promise(res => {
-          const canvas = this.$refs.canvas;
-          canvas.width = CUT_WIDTH;
-          canvas.height = CUT_HEIGHT;
-          const ctx = canvas.getContext('2d');
-          const img = new Image();
-          img.onload = () => {
-            const w = img.naturalWidth, h = img.naturalHeight;
-            if (fromFabric) {
-              const { left, top, width, height, scaleX, scaleY, angle } = this.fabric.getObjects()[0];
-              this.cuts[this.selIdx].fabric = { left, top, width, height, scaleX, scaleY, angle };
-              // ctx.drawImage(img, w * .2, h * .2114, w * .6, h * .5772, 0, 0, CUT_WIDTH, CUT_HEIGHT);
-              ctx.drawImage(img, w * .235, h * .2484, w * .53, h * .5032, 0, 0, CUT_WIDTH, CUT_HEIGHT);
-            }
-            else {
-              ctx.clearRect(0, 0, CUT_WIDTH, CUT_HEIGHT);
-              const scale = Math.min(w / CUT_WIDTH, h / CUT_HEIGHT);
-              ctx.drawImage(img, 0, 0, w, h, (CUT_WIDTH - w / scale) / 2, (CUT_HEIGHT - h / scale) / 2, w / scale, h / scale);
-            }
-            res(canvas.toDataURL());
-          }
-          img.crossOrigin = 'Anonymous';
-          img.src = src;
-        });
       },
       // 하단의 다음단계버튼 처리
       async nextStep(to) {
@@ -452,6 +491,7 @@
       },
       async save() {
         const canvas = this.$refs.canvas, toBlob = _=>new Promise(res=>canvas.toBlob(res,'image/png'));
+        await this.commitAllCuts();
         // 인쇄용 (5000x5000)
         w = 5000;
         canvas.width = w;
@@ -459,15 +499,11 @@
         ctx = canvas.getContext('2d');
         ctx.fillStyle = '#fff';
         ctx.fillRect(0, 0, w, w);
-        for (const img of this.$refs.cut) {
-          ctx.drawImage(img, w / 2 - CUT_WIDTH / 2, w * 0.03, CUT_WIDTH, CUT_HEIGHT);
-          ctx.translate(w / 2, w / 2);
-          ctx.rotate(Math.PI / 180 * 30);
-          ctx.translate(-w / 2, -w / 2);
-        }
+        await this.drawCuts(ctx, w, CUT_WIDTH, CUT_HEIGHT);
         await new Promise(res => {
           const bg = new Image();
           bg.onload = () => res(ctx.drawImage(bg, 0, 0));
+          bg.onerror = () => res();
           bg.src = 'imgs/bg.png';
         });
         ctx.textAlign = "center";
@@ -484,26 +520,43 @@
         ctx = canvas.getContext('2d');
         await new Promise(res => {
           const bg = new Image();
-          bg.onload = () => res(ctx.drawImage(bg, w / 9, w / 5, w * .672, w * 3 / 5));
-          bg.src = 'imgs/prod.png';
+          let done = false;
+          const finish = () => { if (!done) { done = true; res(); } };
+          bg.onload = () => { ctx.drawImage(bg, w / 9, w / 9, w * 7/9, w * 7/9); finish(); };
+          bg.onerror = () => {
+            const fallback = new Image();
+            fallback.onload = () => { ctx.drawImage(fallback, w / 9, w / 5, w * .672, w * 3 / 5); finish(); };
+            fallback.onerror = finish;
+            fallback.src = 'imgs/prod.png';
+          };
+          setTimeout(finish, 3000);
+          bg.crossOrigin = "anonymous";
+          bg.src = parent.$('.slider_goods_nav img')[0]?.src||'imgs/prod.png';
         });
         const cw = CUT_WIDTH / 25, ch = CUT_HEIGHT / 25
-        for (const img of this.$refs.cut) {
-          ctx.drawImage(img, w / 2 - cw / 2, w * 0.03, cw, ch);
-          ctx.translate(w / 2, w / 2);
-          ctx.rotate(Math.PI / 180 * 30);
-          ctx.translate(-w / 2, -w / 2);
-        }
+        await this.drawCuts(ctx, w, cw, ch);
         // const thumbPng = await (await fetch(canvas.toDataURL('image/png'))).blob();
         const thumbPng = await toBlob();
         // save 
-        let gno='1000000000',price='13500',body=`mode=cartIn&scmNo=1&cartMode=&set_goods_price=${price}&set_goods_fixedPrice=${price}.00&set_goods_mileage=0&set_goods_stock=2&set_coupon_dc_price=${price}.00&set_goods_total_price=0&set_option_price=0&set_option_text_price=0&set_add_goods_price=0&set_total_price=${price}&mileageFl=c&mileageGoods=0.00&mileageGoodsUnit=percent&goodsDiscountFl=y&goodsDiscount=0.00&goodsDiscountUnit=percent&taxFreeFl=t&taxPercent=10.0&scmNo=1&brandCd=001&cateCd=001&optionFl=n&goodsDeliveryFl=y&sameGoodsDeliveryFl=n&useBundleGoods=1&acePid=&event_id=&deliveryMethodFl=delivery&deliveryCollectFl=pre&goodsNo%5B%5D=${gno}&optionSno%5B%5D=14&goodsPriceSum%5B%5D=${price}&addGoodsPriceSum%5B%5D=0&couponApplyNo%5B%5D=&couponSalePriceSum%5B%5D=&couponAddPriceSum%5B%5D=&goodsCnt%5B%5D=1&optionPriceSum%5B%5D=0&option_price_0=0.00`;
+        let gno=(new URLSearchParams(parent.location.search)).get('goodsNo')||'1000000000',price=parent.frmView?.set_goods_price?.value||'70000',body=`mode=cartIn&scmNo=1&cartMode=&set_goods_price=${price}&set_goods_fixedPrice=${price}.00&set_goods_mileage=0&set_goods_stock=2&set_coupon_dc_price=${price}.00&set_goods_total_price=0&set_option_price=0&set_option_text_price=0&set_add_goods_price=0&set_total_price=${price}&mileageFl=c&mileageGoods=0.00&mileageGoodsUnit=percent&goodsDiscountFl=y&goodsDiscount=0.00&goodsDiscountUnit=percent&taxFreeFl=t&taxPercent=10.0&scmNo=1&brandCd=001&cateCd=001&optionFl=n&goodsDeliveryFl=y&sameGoodsDeliveryFl=n&useBundleGoods=1&acePid=&event_id=&deliveryMethodFl=delivery&deliveryCollectFl=pre&goodsNo%5B%5D=${gno}&optionSno%5B%5D=14&goodsPriceSum%5B%5D=${price}&addGoodsPriceSum%5B%5D=0&couponApplyNo%5B%5D=&couponSalePriceSum%5B%5D=&couponAddPriceSum%5B%5D=&goodsCnt%5B%5D=1&optionPriceSum%5B%5D=0&option_price_0=0.00`;
         const cartId = ((await(await fetch('/order/cart_ps.php',{body,headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'},method:'post'})).json()).goods||[])[0];
         if(!cartId) return this.$alert($t('카트저장에 실패하였습니다.'));
+        const imageMeta = {
+          cartSno: String(cartId),
+          goodsNo: gno,
+          optionSno: '14',
+          thumbUrl: `https://img.12cut.net/12cut_usr/cart/${cartId}_thumb.png`,
+          printUrl: `https://img.12cut.net/12cut_usr/cart/${cartId}.png`,
+          createdAt: Date.now()
+        };
         sessionStorage.setItem('cartSno',cartId);
+        sessionStorage.setItem('12cutOrderImage', JSON.stringify(imageMeta));
+        localStorage.setItem(`12cutOrderImage:${cartId}`, JSON.stringify(imageMeta));
+        localStorage.setItem('12cutLastOrderImage', JSON.stringify(imageMeta));
         body = new FormData();
         body.append('type', '12cut_upload');
         body.append('folder', '12cut_usr/cart/');
+        body.append('cartSno', imageMeta.cartSno);
         body.append('thumbPng', thumbPng, cartId+'_thumb.png');
         body.append('printPng', printPng, cartId+'.png');
         await fetch('https://img.12cut.net/api.php',{method:'POST',body});
@@ -559,27 +612,13 @@
           this.fabric.clipPath = mask;
           this.fabric.controlsAboveOverlay = true;
           this.fabric.selection = false;
-          this.fabric.on('object:modified', async () => {
-            // mask.opacity = 0;
-            this.fabric.clipPath = null;
-            const src = this.exportFabricDataUrl();
-            // mask.opacity = 1;
-            this.fabric.clipPath = mask;
-            this.cuts[this.selIdx].cut = await this.cropCut(src, true);
-            this.$forceUpdate();
-          });
-          this.sel(0);
+          this.fabric.on('object:modified', () => this.commitCurrentCut());
+          await this.sel(0);
           this.tooltip(this.trimTooltipPos(), '레드 포인트를 움직이면<br>줌/회전을 할 수 있어요');
         }
         else if (this.step == 3) {
-          if (from == 2 && this.fabric && this.fabric.getObjects().length) {
-            const clipPath = this.fabric.clipPath;
-            this.fabric.clipPath = null;
-            const src = this.exportFabricDataUrl();
-            this.fabric.clipPath = clipPath;
-            this.cuts[this.selIdx].cut = await this.cropCut(src, true);
-          }
-          for (const cut of this.cuts) if (!cut.cut) cut.cut = await this.cropCut(cut.src);
+          if (from == 2) await this.commitAllCuts();
+          else for (const cut of this.cuts) if (!cut.cut) await this.renderCut(cut);
           setTimeout(() => this.tooltip({ top: 'calc(7.5em + 30vw)', left: 'calc(50vw - 72px)' }, '클릭하면 이미지를 확대할 수 있어요'), 500);
         }
         await this.$nextTick();
