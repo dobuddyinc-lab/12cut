@@ -42,6 +42,8 @@ editor/*.bak
 
 # SFTP/expect scripts (비밀번호 평문 포함 — 절대 커밋 금지)
 *.exp
+# SFTP 임시 askpass/batch 디렉터리(비밀번호 포함 — 절대 커밋 금지)
+.tmp-sftp*/
 
 # 진단 도구(puppeteer) — 루트 설치 부산물 & dev 스크립트(미배포)
 /package.json
