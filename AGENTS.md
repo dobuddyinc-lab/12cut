@@ -392,6 +392,43 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **배포·검증**: `expect .deploy.exp`로 `custom.css`→`/dobuddy/12cut/custom.css`, `custom.js`→`/dobuddy/12cut/custom.js` 각 1회 성공. `node --check custom.js` 통과. 라이브 마커: CSS 정렬 규칙, JS `_syncCutBottomNav`·`_applyCutLang`·`click.cutLangBtn`. 엣지 전파 10~20초 지연 후 curl 확인.
 - **재발 방지**: 12cut 전용 JS 주입 UI(앱바·모바일 헤더 등)는 **언어 전환 시 `$t()`만 믿지 말고** `_applyCutLang` 또는 동등한 sync를 모든 lang 경로에 연결. 신규 앱바/푸터 커스텀 추가 시 생성+갱신 함수 분리 원칙 유지.
 
+#### 세션 기록 (2026-06-07 / 체크박스 체크마크 위치 버그 수정 — 배포·검증됨)
+- **요구**: `/member/join_agreement.php`(약관동의) "체크박스+화살표" 행에서 체크박스 선택 표현이 깨짐. 장바구니(`/order/cart.php`)처럼 빨간 라운드 박스 + 흰 체크마크로 통일.
+- **★ 근본 원인 — 체크마크(`::after`) 위치 기준은 항상 라벨(label)**: `custom.css`의 공통 "체크마크 중앙 정렬 보정" 블록이 **모든** 커스텀 체크박스에 `left:50%`를 적용 중이었음.
+  - **Pattern A (요소 자체가 박스, 텍스트 없음)**: 장바구니 `.body-cart .body label.check_s`(20px)·주문서 전체동의 `.ord-agree`(22px) → `left:50%` = 박스 중심 → **정상**.
+  - **Pattern B (라벨에 텍스트 있고 박스는 `::before`, 박스 `left:0`)**: 약관동의·회원가입(`join.php`)·회원정보수정(`my_page.php`)·주문서 약관(`.f2 .form_element label`)·로그인 상태유지 → `left:50%` = **텍스트 라벨의 한가운데** → 흰 체크마크가 빨간 박스를 벗어나 **글자 위로 떠버림** = 사용자가 본 "체크박스 아이콘 오류".
+- **수정(`custom.css` 보정 블록 분리, line ~689~)**: 가로 중심을 **라벨 폭과 무관한 박스 px 중심**으로 고정.
+  - Pattern A 유지: `left:50%/top:48%` (cart `label.check_s` · orderform `.ord-agree`).
+  - Pattern B1 (박스 20px, `top:0`): `left:10px/top:10px` — 약관동의 `.join_agreement_cont`, 주문서 `.f2 .form_element label`.
+  - Pattern B2 (박스 20px, `top:50%` 세로중앙): `left:10px/top:50%` — 회원가입 `.body-join #formJoin`, 회원정보수정 `.body-mypage-edit #formJoin`.
+  - 로그인 상태유지(박스 18px, `top:0`): `left:9px/top:9px`.
+  - 공통 변환은 `translate(-50%,-50%) rotate(45deg)` 유지 → 박스 중심에 체크마크 정중앙.
+- **진단 방법**: 라이브 헤드리스(`puppeteer-core`+시스템 Chrome)가 네트워크 지연으로 중단 → **로컬 하니스로 전환**(`/tmp/cartdiag/harness.html` = 약관 DOM 재현 + `file://` 로컬 `custom.css` 로드, `--allow-file-access-from-files`). 헤드리스는 **샌드박스 밖(`required_permissions:["all"]`)** 에서만 실행됨. 측정 결과 박스 `rgb(246,50,55)` 20px + 체크마크 `left:10px top:10px`(=박스 중심) 확인, 스크린샷 육안 검증(빨강 박스 + 정중앙 흰 체크 + `>` 화살표 정상).
+- **배포·검증**: 공용 파일이라 배포 전 라이브 `custom.css` pull→diff = **내 보정 블록 변경분만 차이(외주 변경 0)** 확인. `expect .deploy.exp custom.css /dobuddy/12cut/custom.css`(AUTHED 195ms·100%). 엣지 12초 후 라이브 = 로컬 **바이트 일치**, `Pattern B1` 마커 확인. `ReadLints` 0.
+- **영향 범위**: 약관동의 외 회원가입 정보입력·회원정보수정·주문서 약관·로그인 상태유지 체크박스가 **함께 정렬 교정**됨(같은 버그였음).
+- **외주 통지 대상**: `custom.css` 보정 블록 변경 → 공용 파일 diff 공유 필요.
+- **잔여(검토)**: 약관 행 체크박스 크기(현재 20px) 유지 vs 확대 — 약관은 리스트 스캔 목적이라 20px 적절 판단, 장바구니(상품 선택)와 최적 크기 다를 수 있음.
+
+#### 세션 기록 (2026-06-07 / 약관·로그인·팝업 i18n 누락 보정 — 배포·검증됨)
+- **증상**: `/member/join_agreement.php?memberFl=personal`에서 상단 헤더 언어 변경 시 일부 문구가 한국어로 잔존. 특히 커스텀 헤드라인 `12cut 이용을 위한 / 약관에 동의해주세요.`와 전체동의 문구 `12cut의 모든 약관을 확인하고 전체 동의합니다.`가 미번역. 이후 첨부 실폰 화면 기준 장바구니 빈 상태 팝업에서 `通知/確認`은 번역되지만 본문 `장바구니에 담겨있는 상품이 없습니다.`만 한국어 잔존. `/member/login.php`도 소셜/회원 버튼 일부 번역 누락 확인.
+- **원인**: 라이브 `/dobuddy/files/{ja,en,zh}.html` 사전이 외주/공용 bd2 기반으로 갱신되며 12cut 전용 키가 소실됨. 공용 사전에는 `브라운더스트2 굿즈...` 등 타 서비스 키는 있으나 `12cut 이용을 위한`, `약관에 동의해주세요.`, `장바구니에 담겨있는 상품이 없습니다.` 같은 12cut 전용 UI 키가 없음. `$t()`는 키가 없으면 한국어 원문을 그대로 반환.
+- **수정(`custom.js` 전용, 공용 사전·`global.js` 미수정)**: `_cutPageTx` 로컬 보강맵에 약관 헤드라인/전체동의, 로그인 버튼(`구글로 로그인`, `Apple로 로그인`, `Facebook으로 로그인`, `12cut 아이디로 로그인`, `카카오로 로그인`, `네이버로 로그인`, `회원가입`, `아이디 찾기`, `비밀번호 찾기`, `아이디 저장`, `또는`, 비회원 주문조회 안내), 팝업 본문(`장바구니에 담겨있는 상품이 없습니다.`)을 en/ja/zh로 추가. `_ct()` 경유로 약관 헤드라인을 렌더하고, `_translateCutText()`로 12cut 전용 텍스트 노드/value/placeholder/aria-label을 후처리. 팝업처럼 늦게 생성되는 레이어는 `_watchCutLayerText()` `MutationObserver`로 치환.
+- **중요 주의 — 약관 법무 본문 제외**: `.agreement_box`, `textarea`, `.terms_box`, `.scroll_box`, `script`, `style`는 후처리 제외. 약관 조항 원문은 서버 법무 텍스트라 자동 번역 대상이 아니며, 이번 작업은 구조적 UI/CTA/팝업 문구만 대상으로 함.
+- **배포·검증**: `node --check custom.js` 통과, `ReadLints` 오류 없음. `expect .deploy.exp custom.js /dobuddy/12cut/custom.js`로 SFTP 업로드 성공(AUTHED 217ms, 118KB 100%). 라이브 HTTP 2회 확인: size `121338`, 마커 `There are no items in your cart` 1, `Continue with Google` 1, `_watchCutLayerText` 2, 로컬과 라이브 `cmp` **IDENTICAL**.
+- **헤드리스 검증**: `/member/login.php` 모바일 390px에서 ja/en/zh 각각 Google/Apple/Facebook/회원가입 버튼 번역 확인(ja `Googleでログイン`, en `Continue with Google`, zh `使用 Google 登录`). `/order/cart.php` 빈 카트 전체주문 클릭 팝업에서 사용자 표시 본문이 ja `カートに商品が入っていません。`로 치환됨 확인. DOM 전체에는 숨은 원본/스크립트 조각으로 한국어가 남을 수 있으나, 실제 표시 팝업 본문은 번역됨.
+- **운영 규칙(재발 방지)**: 12cut 전용 UI 문자열은 공용 사전에 의존하지 말고 `_cutPageTx` 로컬 보강맵을 함께 점검. 특히 팝업/레이어/alert류는 페이지 로드 후 늦게 생기므로 `$t()` 정적 검증만으로 완료 판단 금지, MutationObserver 또는 헤드리스 post-JS DOM으로 실제 표시 텍스트 확인 필요.
+
+#### 세션 기록 (2026-06-07 / 재인증 안내문 + 장바구니 알림 팝업 번역 — 배포·헤드리스 검증됨)
+- **요구**: ① `/mypage/my_page_password.php` 재인증 안내문 번역 ② 첨부 팝업("구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!")이 **일본어 화면인데 본문만 한국어**로 남는 문제 + 장바구니/주문 팝업 문구 전반 검토.
+- **★ 근본 메커니즘 — `ui.alert()` 본문은 `$t(html)`로 사전 번역**: 공용 `global.js`의 `ui.alert(html,{title,okTitle,confirm,noTranslate})`는 `if(!noTranslate)html=$t(html)`로 본문을 사전 치환하고, 모달은 `<h2 class=title>$t(title||'알림')</h2><div class=contents>${html}</div><a class=primary>$t(okTitle||'확인')</a>` 구조. → **타이틀(通知=$t('알림'))·버튼(確認=$t('확인'))은 사전에 있어 번역되는데, 본문 문구는 사전에 키가 없어 한국어 폴백**이 정체. = "타이틀/버튼은 일본어, 본문만 한국어" 현상.
+- **★ 출처 추적 무용 — DOM 텍스트 매칭이 정답**: 스크린샷 문구는 `global.js`·`cart.php` inline·19개 외부 JS·`\uXXXX` 디코드 어디에도 없음(동적 AJAX/서버 생성 추정). 출처를 쫓는 대신 **문구 자체를 사전 키로 등록**하면 `$t(html)`가 직접 번역. 보조로 `custom.js`의 `_watchCutLayerText`(MutationObserver가 `document.body` subtree 감시 → `_translateCutText`로 텍스트 노드 trim 매칭 치환)가 캐시 stale 사용자까지 커버.
+- **사전 대조 결과**: 장바구니/주문 팝업 문구 대부분(`옵션을 선택하세요`·`장바구니에 담긴 상품이 없어요.`·`주문내역이 없습니다.`·`해당 상품은 현재 구매가 불가한 상품입니다.`)은 **이미 사전에 있음**. 누락은 3개뿐 → 추가.
+- **조치(이중 안전망)**: `scripts/fill_i18n.py` `NEW_KEYS`에 ① `구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!` ② `구매확정 하시겠습니까?` ③ `재고가 부족합니다. 현재 %s개의 재고가 남아 있습니다.`(`%s` sprintf 토큰) 추가 → `i18n_out/{en,ja,zh}.html` 재생성. 고정 문구 2개(①②)는 `custom.js` `_cutPageTx` en/ja/zh에도 추가(캐시 사용자 즉시 치환). 재인증 안내문(`회원님의 정보를 안전하게 보호하기 위해…`)도 사전+`_cutPageTx` 반영.
+- **배포 안전성**: 배포 전 라이브 ja.html과 생성본 대조 = `OUT 384키 = LIVE 381 + 신규 3`, **`LOST_IF_OVERWRITE 0`**(라이브 키 손실 0) 확인 후 덮어씀. `expect .deploy.exp`로 사전 3종(`/dobuddy/files/`) + `custom.js`(`/dobuddy/12cut/`) 4파일 100% 전송. (1차 배포는 ServerAlive `eof` 행으로 사용자 중단 → 라이브 미반영 확인 후 재배포 성공. **AGENTS "ServerAlive eof 함정" 재확인**.)
+- **검증(헤드리스 실측)**: `localStorage.$mylang` 세팅 + `$lang` 캐시 제거 후 `cart.php`에서 `ui.alert(원문)` 직접 호출 → **JA** `通知`/`購入できない商品があります。カートの商品をご確認ください。`, **EN** `Notification`/`Some items can't be purchased. Please check the items in your cart.`, **ZH** `通知`/`购物车中有无法购买的商品，请确认购物车商品！` 전부 정상. 라이브 사전 384키·신규 3키·`custom.js` 마커 확인.
+- **주의**: 사전 신규 키는 `localStorage.$lang` 캐시로 **기존 사용자는 언어 1회 전환 시 반영**(신규/캐시없는 사용자 즉시). `_cutPageTx`+MutationObserver가 stale 캐시도 즉시 치환. **외주 통지 대상**: `custom.js`·사전 3종.
+- **잔여(검토)**: 결제(`order.php`) 진입 단계의 검증 알림 팝업은 미점검(현재는 장바구니→주문 진입 구간만 커버). `jayw` 카트가 비어 실제 구매불가 팝업 자연 재현은 못 함(빈카트 메시지로 `$t` 메커니즘 검증).
+
 #### 미해결/다음 작업
 - **장바구니 Phase 2(보류)**: 수량 스테퍼 UI 부재가 기능 결손인지 먼저 확인 → 컬러칩·상품별 배송비 라인. JS/백엔드 의존이라 CSS 범위 밖.
 - **장바구니 빈 상태(empty-state) 보강(검토)**: 빈 카트에서 전체선택 숨김 후 `장바구니` 헤드라인→"담긴 상품 없어요" 안내로 직결. Value First 관점 추천상품 CTA 등 empty-state 설계 여지.

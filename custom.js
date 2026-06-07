@@ -198,11 +198,33 @@ const custom={
     var _ff={en:["'Nunito'",'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap'],ja:["'Zen Maru Gothic'",'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap'],zh:["'GenSenRounded2 TC'",'https://fontsapi.zeoseven.com/303/main/result.css']}[_cl];
     if(_ff){var _s=document.createElement('style');_s.textContent='@import url("'+_ff[1]+'");body,body *{font-family:'+_ff[0]+",'Pretendard Variable','Pretendard',sans-serif!important}";document.head.appendChild(_s);}
     var _cutPageTx={
-      en:{'홈':'Home','마이':'My','회원정보 수정':'Edit Member Information','회원정보 변경':'Edit Member Information','회원 탈퇴':'Delete Account','찜한 상품이 없습니다.':'No wishlisted items.','주문취소':'Cancel Order','주문 취소':'Cancel Order','회원탈퇴':'Delete Account','탈퇴':'Delete','탈퇴하기':'Delete Account','회원탈퇴 신청':'Request Account Deletion','회원탈퇴 안내':'Account Deletion Notice','회원탈퇴 사유':'Reason for Account Deletion','비밀번호 확인':'Confirm Password','비밀번호':'Password','현재 비밀번호':'Current Password','취소':'Cancel','확인':'Confirm','완료':'Done','회원 탈퇴를 하시겠습니까?':'Are you sure you want to delete your account?','회원탈퇴를 하시겠습니까?':'Are you sure you want to delete your account?','탈퇴하시겠습니까?':'Are you sure you want to delete your account?','탈퇴가 완료되었습니다.':'Your account has been deleted.','회원탈퇴가 완료되었습니다.':'Your account has been deleted.','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'Please review the notice before deleting your account.','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'After account deletion, personal information and purchase records are stored and deleted according to applicable laws.','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'After account deletion, your member information will be deleted and cannot be restored.','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'Account deletion may be restricted if you have orders in progress.'},
-      ja:{'홈':'ホーム','마이':'マイ','회원정보 수정':'会員情報修正','회원정보 변경':'会員情報修正','회원 탈퇴':'退会','찜한 상품이 없습니다.':'お気に入り商品がありません。','주문취소':'注文キャンセル','주문 취소':'注文キャンセル','회원탈퇴':'退会','탈퇴':'退会','탈퇴하기':'退会する','회원탈퇴 신청':'退会申請','회원탈퇴 안내':'退会のご案内','회원탈퇴 사유':'退会理由','비밀번호 확인':'パスワード確認','비밀번호':'パスワード','현재 비밀번호':'現在のパスワード','취소':'キャンセル','확인':'確認','완료':'完了','회원 탈퇴를 하시겠습니까?':'退会しますか？','회원탈퇴를 하시겠습니까?':'退会しますか？','탈퇴하시겠습니까?':'退会しますか？','탈퇴가 완료되었습니다.':'退会が完了しました。','회원탈퇴가 완료되었습니다.':'退会が完了しました。','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'退会申請前に案内事項を必ずご確認ください。','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'退会後、個人情報および購入履歴は関連法令に基づき保管後、破棄されます。','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'退会後は会員情報が削除され、復元できません。','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'進行中の注文がある場合、退会が制限されることがあります。'},
-      zh:{'홈':'首页','마이':'我的','회원정보 수정':'修改会员信息','회원정보 변경':'修改会员信息','회원 탈퇴':'注销会员','찜한 상품이 없습니다.':'暂无收藏商品。','주문취소':'取消订单','주문 취소':'取消订单','회원탈퇴':'注销会员','탈퇴':'注销','탈퇴하기':'注销会员','회원탈퇴 신청':'申请注销会员','회원탈퇴 안내':'注销会员须知','회원탈퇴 사유':'注销原因','비밀번호 확인':'确认密码','비밀번호':'密码','현재 비밀번호':'当前密码','취소':'取消','확인':'确认','완료':'完成','회원 탈퇴를 하시겠습니까?':'确定要注销会员吗？','회원탈퇴를 하시겠습니까?':'确定要注销会员吗？','탈퇴하시겠습니까?':'确定要注销会员吗？','탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'申请注销会员前，请务必确认相关说明。','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'注销后，个人信息及购买记录将按相关法规保存后销毁。','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'注销后会员信息将被删除，且无法恢复。','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'如有进行中的订单，会员注销可能会受到限制。'}
+      en:{'구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!':'Some items can’t be purchased. Please check the items in your cart.','구매확정 하시겠습니까?':'Confirm this purchase?','회원님의 정보를 안전하게 보호하기 위해 비밀번호를 다시 한번 확인해 주세요.':'To keep your account secure, please verify your password once more.','홈':'Home','마이':'My','12cut 이용을 위한':'To use 12cut,','약관에 동의해주세요.':'please agree to the terms.','12cut의 모든 약관을 확인하고 전체 동의합니다.':'I have reviewed and agree to all 12cut terms.','구글로 로그인':'Continue with Google','Apple로 로그인':'Continue with Apple','Facebook으로 로그인':'Continue with Facebook','12cut 아이디로 로그인':'Log in with 12cut ID','카카오로 로그인':'Continue with Kakao','네이버로 로그인':'Continue with Naver','회원가입':'Sign Up','아이디 찾기':'Find ID','비밀번호 찾기':'Find Password','아이디 저장':'Save ID','또는':'or','비회원 주문조회 하기':'Non-member Order Lookup','주문번호와 비밀번호를 잊으신 경우, 고객센터로 문의하여 주시기 바랍니다.':'If you forgot your order number or password, please contact Customer Support.','아이디, 비밀번호가 일치하지 않습니다. 다시 입력해 주세요.':'The ID and password do not match. Please try again.','장바구니에 담겨있는 상품이 없습니다.':'There are no items in your cart.','회원정보 수정':'Edit Member Information','회원정보 변경':'Edit Member Information','회원 탈퇴':'Delete Account','찜한 상품이 없습니다.':'No wishlisted items.','주문취소':'Cancel Order','주문 취소':'Cancel Order','회원탈퇴':'Delete Account','탈퇴':'Delete','탈퇴하기':'Delete Account','회원탈퇴 신청':'Request Account Deletion','회원탈퇴 안내':'Account Deletion Notice','회원탈퇴 사유':'Reason for Account Deletion','비밀번호 확인':'Confirm Password','비밀번호':'Password','현재 비밀번호':'Current Password','취소':'Cancel','확인':'Confirm','완료':'Done','회원 탈퇴를 하시겠습니까?':'Are you sure you want to delete your account?','회원탈퇴를 하시겠습니까?':'Are you sure you want to delete your account?','탈퇴하시겠습니까?':'Are you sure you want to delete your account?','탈퇴가 완료되었습니다.':'Your account has been deleted.','회원탈퇴가 완료되었습니다.':'Your account has been deleted.','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'Please review the notice before deleting your account.','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'After account deletion, personal information and purchase records are stored and deleted according to applicable laws.','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'After account deletion, your member information will be deleted and cannot be restored.','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'Account deletion may be restricted if you have orders in progress.'},
+      ja:{'구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!':'購入できない商品があります。カートの商品をご確認ください。','구매확정 하시겠습니까?':'購入を確定しますか？','회원님의 정보를 안전하게 보호하기 위해 비밀번호를 다시 한번 확인해 주세요.':'お客様の情報を安全に保護するため、パスワードをもう一度ご確認ください。','홈':'ホーム','마이':'マイ','12cut 이용을 위한':'12cutをご利用いただくため','약관에 동의해주세요.':'規約に同意してください。','12cut의 모든 약관을 확인하고 전체 동의합니다.':'12cutのすべての規約を確認し、全てに同意します。','구글로 로그인':'Googleでログイン','Apple로 로그인':'Appleでログイン','Facebook으로 로그인':'Facebookでログイン','12cut 아이디로 로그인':'12cut IDでログイン','카카오로 로그인':'Kakaoでログイン','네이버로 로그인':'Naverでログイン','회원가입':'会員登録','아이디 찾기':'IDを探す','비밀번호 찾기':'パスワードを探す','아이디 저장':'IDを保存','또는':'または','비회원 주문조회 하기':'非会員注文照会','주문번호와 비밀번호를 잊으신 경우, 고객센터로 문의하여 주시기 바랍니다.':'注文番号とパスワードを忘れた場合は、カスタマーセンターまでお問い合わせください。','아이디, 비밀번호가 일치하지 않습니다. 다시 입력해 주세요.':'IDまたはパスワードが一致しません。もう一度入力してください。','장바구니에 담겨있는 상품이 없습니다.':'カートに商品が入っていません。','회원정보 수정':'会員情報修正','회원정보 변경':'会員情報修正','회원 탈퇴':'退会','찜한 상품이 없습니다.':'お気に入り商品がありません。','주문취소':'注文キャンセル','주문 취소':'注文キャンセル','회원탈퇴':'退会','탈퇴':'退会','탈퇴하기':'退会する','회원탈퇴 신청':'退会申請','회원탈퇴 안내':'退会のご案内','회원탈퇴 사유':'退会理由','비밀번호 확인':'パスワード確認','비밀번호':'パスワード','현재 비밀번호':'現在のパスワード','취소':'キャンセル','확인':'確認','완료':'完了','회원 탈퇴를 하시겠습니까?':'退会しますか？','회원탈퇴를 하시겠습니까?':'退会しますか？','탈퇴하시겠습니까?':'退会しますか？','탈퇴가 완료되었습니다.':'退会が完了しました。','회원탈퇴가 완료되었습니다.':'退会が完了しました。','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'退会申請前に案内事項を必ずご確認ください。','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'退会後、個人情報および購入履歴は関連法令に基づき保管後、破棄されます。','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'退会後は会員情報が削除され、復元できません。','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'進行中の注文がある場合、退会が制限されることがあります。'},
+      zh:{'구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!':'购物车中有无法购买的商品，请确认购物车商品！','구매확정 하시겠습니까?':'确认购买吗？','회원님의 정보를 안전하게 보호하기 위해 비밀번호를 다시 한번 확인해 주세요.':'为了安全保护您的信息，请再次确认密码。','홈':'首页','마이':'我的','12cut 이용을 위한':'为使用 12cut，','약관에 동의해주세요.':'请同意以下条款。','12cut의 모든 약관을 확인하고 전체 동의합니다.':'我已确认并同意 12cut 的所有条款。','구글로 로그인':'使用 Google 登录','Apple로 로그인':'使用 Apple 登录','Facebook으로 로그인':'使用 Facebook 登录','12cut 아이디로 로그인':'使用 12cut ID 登录','카카오로 로그인':'使用 Kakao 登录','네이버로 로그인':'使用 Naver 登录','회원가입':'注册','아이디 찾기':'找回账号','비밀번호 찾기':'找回密码','아이디 저장':'保存账号','또는':'或','비회원 주문조회 하기':'非会员订单查询','주문번호와 비밀번호를 잊으신 경우, 고객센터로 문의하여 주시기 바랍니다.':'如果忘记订单号或密码，请联系客服中心。','아이디, 비밀번호가 일치하지 않습니다. 다시 입력해 주세요.':'账号或密码不一致，请重新输入。','장바구니에 담겨있는 상품이 없습니다.':'购物车中没有商品。','회원정보 수정':'修改会员信息','회원정보 변경':'修改会员信息','회원 탈퇴':'注销会员','찜한 상품이 없습니다.':'暂无收藏商品。','주문취소':'取消订单','주문 취소':'取消订单','회원탈퇴':'注销会员','탈퇴':'注销','탈퇴하기':'注销会员','회원탈퇴 신청':'申请注销会员','회원탈퇴 안내':'注销会员须知','회원탈퇴 사유':'注销原因','비밀번호 확인':'确认密码','비밀번호':'密码','현재 비밀번호':'当前密码','취소':'取消','확인':'确认','완료':'完成','회원 탈퇴를 하시겠습니까?':'确定要注销会员吗？','회원탈퇴를 하시겠습니까?':'确定要注销会员吗？','탈퇴하시겠습니까?':'确定要注销会员吗？','탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴가 완료되었습니다.':'会员注销已完成。','회원탈퇴를 신청하기 전에 안내 사항을 꼭 확인해주세요.':'申请注销会员前，请务必确认相关说明。','탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.':'注销后，个人信息及购买记录将按相关法规保存后销毁。','탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.':'注销后会员信息将被删除，且无法恢复。','진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.':'如有进行中的订单，会员注销可能会受到限制。'}
     };
     var _ct=function(s){return (_cutPageTx[_cl]&&_cutPageTx[_cl][s])||$t(s);};
+    var _translateCutText=function(root,exclude){
+      if(!_cutPageTx[_cl])return;
+      root=root||document;
+      exclude=exclude||'.agreement_box,textarea,.terms_box,.scroll_box,script,style';
+      $(root).find('*').addBack().contents().filter(function(){return this.nodeType===3&&!$(this).parent().closest(exclude).length;}).each(function(){
+        var raw=this.nodeValue,t=$.trim(raw);
+        if(t&&_cutPageTx[_cl][t])this.nodeValue=raw.replace(t,_ct(t));
+      });
+      $(root).find('input,button,a').each(function(){
+        var $e=$(this),v=$.trim(this.value||$e.text()),p=this.placeholder,a=this.getAttribute('aria-label');
+        if(v&&_cutPageTx[_cl][v]){if(this.value)this.value=_ct(v);else $e.text(_ct(v));}
+        if(p&&_cutPageTx[_cl][p])this.placeholder=_ct(p);
+        if(a&&_cutPageTx[_cl][a])this.setAttribute('aria-label',_ct(a));
+      });
+    };
+    var _watchCutLayerText=function(){
+      if(window.__cutLayerTxWatch)return;
+      window.__cutLayerTxWatch=1;
+      var _run=function(){_translateCutText(document.body,'.agreement_box,textarea,.terms_box,.scroll_box,script,style');};
+      _run();
+      if(window.MutationObserver)new MutationObserver(function(){clearTimeout(window.__cutLayerTxTimer);window.__cutLayerTxTimer=setTimeout(_run,30);}).observe(document.body,{childList:true,subtree:true});
+    };
     var _getCutBottomNavActive=function(){
       var p=location.pathname;
       if(p==='/'||p==='/main/index.php')return 'home';
@@ -229,6 +251,7 @@ const custom={
       $('body').removeClass('ko en ja zh').addClass(_cl);
       $('.cut-mobile-lang-btn').removeClass('is-active').filter('[data-lang="'+_cl+'"]').addClass('is-active');
       _syncCutBottomNav();
+      _translateCutText(document.body);
     };
     var _setLinkText=function($a,key){$a.contents().filter(function(){return this.nodeType===3;}).remove();$a.append(_ct(key));};
     if(location.pathname.indexOf('/mypage/')===0)$('body').addClass('body-mypage');
@@ -322,11 +345,34 @@ const custom={
     }
     var _reauth=function(){if($('body').data('cutReauthReady'))return;var _cancel=$t('취소').replace(/\s+/g,'').trim(),_pri=$t('인증하기').replace(/\s+/g,'').trim(),$pri=$('button,input,a').filter(function(){var t=(this.value||$(this).text()).replace(/\s+/g,'').trim();return t==_pri;});if(!$pri.length)return;if(!$('.c-red').length&&!$('img[src*="kakao"],img[alt*="kakao"],img[alt*="카카오"]').length&&!$('body').hasClass('body-mypage-password'))return;$('body').data('cutReauthReady',1).addClass('body-reauth');$('button,input,a').filter(function(){var t=(this.value||$(this).text()).replace(/\s+/g,'').trim();return t==_cancel;}).addClass('cut-reauth-cancel');$pri.addClass('cut-reauth-primary');var _setAuthLogo=function(q,src){$('body').find(q).attr('src',src);};_setAuthLogo('img[alt*="kakao"],img[src*="kakao"],img[alt*="카카오"]','/dobuddy/12cut/sns-kakao.png');_setAuthLogo('img[alt*="naver"],img[src*="naver"],img[alt*="네이버"]','/dobuddy/12cut/sns-naver.png');_setAuthLogo('img[alt*="facebook"],img[src*="facebook"],img[alt*="페이스북"]','/dobuddy/12cut/sns-facebook.png');var $k=$('img[alt*="kakao"],img[src*="sns-kakao"],img[alt*="카카오"]').first();if(!$k.length)$k=$('body *').filter(function(){var t=$(this).text().replace(/\s+/g,' ').trim().toLowerCase();return t&&(t.indexOf('kakao')>-1||t.indexOf('카카오')>-1);}).not('.cut-reauth-cancel,.cut-reauth-primary').last();var $box=$k;for(var i=0;i<5&&$box.length;i++){var r=$box[0].getBoundingClientRect();if(r.width>200&&r.height>50)break;$box=$box.parent();}if($box.length)$box.addClass('cut-kakao-plain');};
     _reauth();setTimeout(_reauth,300);setTimeout(_reauth,900);
+    _watchCutLayerText();
     switch(location.pathname){
       case '/order/order.php':
         $('body').addClass('body-orderform');
         $('.header_top').attr('data-h',$t('주문하기'));
         $('#frmOrder>a.btn.primary').text($t('결제하기'));
+        // 외화(비-KRW) 주문요약 금액 보정: 공용 global.js 외화 분기가 배송비를 1000 상수로 하드코딩(통화 무관 $1,000)하고
+        // '총 상품 금액'에 할인액(0)을 잘못 표기하는 버그를 12cut 측에서만 오버라이드. KRW 결제는 global 정상 분기라 미개입.
+        if(typeof sel_currency!=='undefined'&&sel_currency.selectedIndex){
+          var _cutFixOrderSum=function(){
+            var $items=$('#frmOrder .cart-div .cart-li'),$box=$('#frmOrder .cart-sumbox');
+            if(!$items.length||!$box.length)return;
+            var rate=(window.ui&&ui.gdEtc&&ui.gdEtc[sel_currency.value])||1,T=0,D=0;
+            $items.each(function(){
+              var pr=(this.getAttribute('data-p')||'').split('-'),p0=parseFloat(pr[0])||0,ds=parseFloat(pr[1])||0;
+              T+=p0;D+=Math.round(p0*ds);
+            });
+            var shipEl=document.getElementById('totalDeliveryCharge');
+            var shipKRW=shipEl?(parseFloat((shipEl.innerText||'').replace(/[^0-9.]/g,''))||0):0;
+            var ship=Math.ceil(shipKRW*rate),total=T-D+ship;
+            $box.html($t('총 상품 금액')+'<s style=float:right><s>'+ui.fmPrice(T,1)+'</s></s>'
+              +'<br>'+$t('총 배송비')+'<s style=float:right>+ <s>'+ui.fmPrice(ship,1)+'</s></s>'
+              +(D>0?'<br>'+$t('할인 금액')+'<s style=float:right>- <s>'+ui.fmPrice(D,1)+'</s></s>':'')
+              +'<div style=font-size:16px>'+$t('최종결제금액')+' <b style=float:right;color:#0B84EC><b>'+ui.fmPrice(total,1)+'</b></b></div>');
+            $('#frmOrder .ord-p>b').text(ui.fmPrice(total,1));
+          };
+          var _cutSumN=0,_cutSumIv=setInterval(function(){_cutSumN++;_cutFixOrderSum();if(_cutSumN>=25)clearInterval(_cutSumIv);},200);
+        }
         setTimeout(()=>{
           var $sg=$('#shippingBasic').closest('.form_element');
           if($sg.length&&!$sg.hasClass('order-ship-done')){
@@ -366,7 +412,14 @@ const custom={
       case '/member/join_agreement.php':
         setTimeout(()=>{
           $('#btnPrevStep').off('click').on('click',function(e){e.preventDefault();location.href='/member/login.php';});
-          if(!$('.agree_headline').length){$('.join_agreement_cont').first().before('<h2 class="agree_headline">'+$t('12cut 이용을 위한')+'<br>'+$t('약관에 동의해주세요.')+'</h2>');}
+          if(!$('.agree_headline').length){$('.join_agreement_cont').first().before('<h2 class="agree_headline">'+_ct('12cut 이용을 위한')+'<br>'+_ct('약관에 동의해주세요.')+'</h2>');}
+          // 12cut 전용 문구는 공용 사전(bd2 기반)에 없어 $t로는 번역 안 됨 → 로컬 보강맵(_cutPageTx)으로 치환. 약관 조항 본문(.agreement_box)은 서버 법무 텍스트라 제외.
+          if(_cutPageTx[_cl]){
+            $('.join_agreement_cont').find('*').addBack().contents().filter(function(){return this.nodeType===3&&!$(this).parent().closest('.agreement_box,textarea,.terms_box,.scroll_box').length;}).each(function(){
+              var raw=this.nodeValue,t=$.trim(raw);
+              if(t&&_cutPageTx[_cl][t])this.nodeValue=raw.replace(t,_ct(t));
+            });
+          }
           $('.js_terms_view').each(function(){var $b=$(this);$b.find('.form_element').css('cursor','pointer').off('click.acc').on('click.acc',function(e){if($(e.target).closest('input,label,a').length)return;$b.toggleClass('open');});});
           var _syncBtn=function(){var ok=$(':checkbox.require','#formTerms').length&&!$(':checkbox.require:not(:checked)','#formTerms').length;$('#btnNextStep').toggleClass('btn--disabled',!ok);};
           $(':checkbox','#formTerms').on('change',_syncBtn);_syncBtn();

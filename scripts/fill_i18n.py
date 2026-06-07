@@ -151,6 +151,10 @@ NEW_KEYS = {
     "탈퇴 후 개인정보 및 구매 기록은 관계 법령에 따라 보관 후 파기됩니다.": {"en": "After account deletion, personal information and purchase records are stored and deleted according to applicable laws.", "ja": "退会後、個人情報および購入履歴は関連法令に基づき保管後、破棄されます。", "zh": "注销后，个人信息及购买记录将按相关法规保存后销毁。"},
     "탈퇴 후에는 회원정보가 삭제되며 복구할 수 없습니다.": {"en": "After account deletion, your member information will be deleted and cannot be restored.", "ja": "退会後は会員情報が削除され、復元できません。", "zh": "注销后会员信息将被删除，且无法恢复。"},
     "진행 중인 주문이 있는 경우 회원탈퇴가 제한될 수 있습니다.": {"en": "Account deletion may be restricted if you have orders in progress.", "ja": "進行中の注文がある場合、退会が制限されることがあります。", "zh": "如有进行中的订单，会员注销可能会受到限制。"},
+    # 장바구니/주문 알림 팝업(ui.alert 본문) — 사전에 키가 없어 한국어로 노출되던 문구
+    "구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!": {"en": "Some items can’t be purchased. Please check the items in your cart.", "ja": "購入できない商品があります。カートの商品をご確認ください。", "zh": "购物车中有无法购买的商品，请确认购物车商品！"},
+    "구매확정 하시겠습니까?": {"en": "Confirm this purchase?", "ja": "購入を確定しますか？", "zh": "确认购买吗？"},
+    "재고가 부족합니다. 현재 %s개의 재고가 남아 있습니다.": {"en": "Out of stock. Only %s left in stock.", "ja": "在庫が不足しています。現在%s個の在庫が残っています。", "zh": "库存不足，当前剩余%s件。"},
 }
 
 # 12cutEditor.html(스토리 만들기 편집기) 전용 키. 편집기는 /dobuddy/files/{lang}.html를
