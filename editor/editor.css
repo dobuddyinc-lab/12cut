@@ -141,11 +141,14 @@ b{color:var(--primary);font-weight:400}
   body.zh .guide-content p{font-size:14px;line-height:1.52;letter-spacing:0}
   .trim-fabric::before,
   .trim-fabric::after{border-radius:32px}
-  .full{transform:scale(3.3);transform-origin:50% 8vh}
-  .full .preview{transform-origin:50% calc(100% + 48vw)}
-  .full .cut{padding-bottom:33vw}
-  .full .cut::after{top:2.5vw;font-size:100%}
-  .full .cut>img{height:15vw}
+  /* 확대(full)는 transform:scale 대신 실제 크기를 3.3배로 키워 재래스터링한다.
+     transform:scale은 작게 래스터된 비트맵을 업스케일해 사진·숫자가 뭉개졌다. */
+  .full{transform:none}
+  .full .preview{padding-left:21.55vw;transform-origin:50% calc(100% + 158.4vw);position:relative;top:calc(35vh - 24.5vw)}
+  .full .cut{padding-bottom:108.9vw}
+  /* 숫자는 사진을 가리지 않도록 섬네일 위·중앙에 배치(검은 배경 위 흰 숫자라 대비 양호) */
+  .full .cut::after{top:-15vw;font-size:330%}
+  .full .cut>img{height:49.5vw;max-width:none}
   .full>img{top:-6vw}
   .complete-product{width:min(52%,200px);margin-top:8vh}
 }
