@@ -205,6 +205,7 @@ EDITOR_KEYS = {
     "사진을 삭제하시겠습니까?": {"en": "Delete this photo?", "ja": "この写真を削除しますか？", "zh": "确定要删除这张照片吗？"},
     "사진 트리밍 완료하셨나요?": {"en": "Finished trimming your photos?", "ja": "写真のトリミングは完了しましたか？", "zh": "照片裁剪完成了吗？"},
     "저장에 실패했습니다.": {"en": "Save failed.", "ja": "保存に失敗しました。", "zh": "保存失败。"},
+    "일부 이미지를 불러오지 못했습니다. 다른 형식으로 저장한 뒤 다시 시도해주세요.": {"en": "Some images could not be loaded. Please save them in another format and try again.", "ja": "一部の画像を読み込めませんでした。別の形式で保存してから、もう一度お試しください。", "zh": "部分图片无法读取。请保存为其他格式后再试。"},
     "$px 미만인 이미지는 화질열화로 사용하실 수 없습니다.": {"en": "Images smaller than $px can’t be used due to quality loss.", "ja": "$px未満の画像は画質劣化のため使用できません。", "zh": "小于$px的图片因画质下降无法使用。"},
     "12컷 선택<br>완료해주세요": {"en": "Please finish<br>selecting 12 cuts", "ja": "12カットの選択を<br>完了してください", "zh": "请先完成<br>12格的选择"},
     "순서 선택<br>완료해주세요": {"en": "Please finish<br>arranging the order", "ja": "順番の選択を<br>完了してください", "zh": "请先完成<br>顺序选择"},

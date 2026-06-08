@@ -57,7 +57,7 @@
       </div>
       <div v-if="step==1" class="btns"><a data-t @click="cuts=[]" style="width:80%;margin-top:1em"
           v-text="$t('사진 순서 초기화')"></a></div>
-      <input ref="file" @change="load($event.target.files)" type="file" multiple accept="image/*"
+      <input ref="file" @change="load($event.target.files)" type="file" multiple accept="image/*,.heic,.heif"
         style="height:0;opacity:0">
     </div>
     <!-- 미리보기 -->
@@ -74,7 +74,7 @@
     <div v-if="step==4" class="complete-view">
       <div class="complete-title" v-text="$t('스토리 저장 완료 !')"></div>
       <div class="complete-copy" v-text="$t('디자인이 장바구니에 추가되었습니다 !')"></div>
-      <img class="complete-product" src="imgs/prod.png">
+      <img class="complete-product" :src="completeProductSrc || getCompleteProductSrc()" :alt="completeProductAlt">
     </div>
     <!-- 타이틀바 -->
     <div v-if="step!=4"
@@ -153,9 +153,17 @@
 
 <script>
   window.$lang = {};// 다국어 처리용
+  const editorFallbackLang = {
+    '일부 이미지를 불러오지 못했습니다. 다른 형식으로 저장한 뒤 다시 시도해주세요.': {
+      en: 'Some images could not be loaded. Please save them in another format and try again.',
+      ja: '一部の画像を読み込めませんでした。別の形式で保存してから、もう一度お試しください。',
+      zh: '部分图片无法读取。请保存为其他格式后再试。'
+    }
+  };
   function $t(txt, params) {
     if (!txt) return txt;
-    txt = $lang[txt] || txt;
+    const lang = ((localStorage.$mylang || document.documentElement.lang || navigator.language || 'ko').slice(0, 2));
+    txt = $lang[txt] || editorFallbackLang[txt]?.[lang] || txt;
     // $t("$와 $님께",["A","B"]) => "A와 B님께" 로 치환합니다.
     if (Array.isArray(params)) for (const p of params) txt = txt.replace('$', p);
     return txt;
@@ -245,6 +253,8 @@
       cuts: [], // {src:원본, cut:트리밍, fabric:트리밍편집}
       imgs: [], // cuts 순서이전의 원본 레퍼런스
       fabric: null,
+      completeProductSrc: '',
+      completeProductAlt: '12cut product',
       step: 0,
       selIdx: 0, selImg:null, isFull: false,
     },
@@ -299,6 +309,29 @@
         else this.tooltipPos = selector;
         tooltipTimer = setTimeout(() => this.tooltipText = '', 3000);
       },
+      getCurrentGoodsNo() {
+        try {
+          return (new URLSearchParams(parent.location.search)).get('goodsNo') || '1000000000';
+        } catch (e) {
+          return '1000000000';
+        }
+      },
+      getCompleteProductSrc(goodsNo) {
+        const imageByGoodsNo = {
+          '1000000000': '/data/skin/front/moment/img/home/assets/images/12CUT VARIATION.3987.webp',
+          '1000000001': '/data/skin/front/moment/img/home/assets/images/12CUT VARIATION.3988.webp',
+          '1000000014': '/data/skin/front/moment/img/home/assets/images/12CUT VARIATION.3989.webp',
+          '1000000017': '/data/skin/front/moment/img/home/assets/images/12CUT VARIATION.3991.webp',
+          '1000000015': '/data/skin/front/moment/img/home/assets/images/12CUT VARIATION.3990.webp',
+          '1000000016': '/data/skin/front/moment/img/home/assets/images/12CUT VARIATION.3992.webp'
+        };
+        try {
+          const parentImg = parent.$ && parent.$('.slider_goods_nav img')[0];
+          const parentSrc = parentImg && (parentImg.currentSrc || parentImg.src);
+          if (parentSrc) return parentSrc;
+        } catch (e) {}
+        return imageByGoodsNo[String(goodsNo || this.getCurrentGoodsNo())] || 'imgs/prod.png';
+      },
       trimTooltipPos() {
         const el = this.$refs.fabric && this.$refs.fabric.parentNode;
         if (!el) return { top: '24em', left: 'calc(100vw - 216px)', width: '200px' };
@@ -338,6 +371,109 @@
       },
       loadFabricImage(src) {
         return new Promise(res => fabric.Image.fromURL(src, img => res(img)));
+      },
+      isHeicFile(file) {
+        return /image\/hei[cf]/i.test(file.type) || /\.(hei[cf])$/i.test(file.name || '');
+      },
+      isImageFile(file) {
+        return file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|hei[cf])$/i.test(file.name || '');
+      },
+      readFileAsDataUrl(file) {
+        return new Promise((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = e => res(e.target.result);
+          reader.onerror = () => rej(reader.error);
+          reader.readAsDataURL(file);
+        });
+      },
+      async imageFileToDataUrl(file) {
+        if (!this.isHeicFile(file)) return this.readFileAsDataUrl(file);
+        const blob = await this.convertHeicToJpeg(file);
+        return this.readFileAsDataUrl(blob);
+      },
+      loadScriptOnce(src, globalName) {
+        if (globalName && window[globalName]) return Promise.resolve(window[globalName]);
+        return new Promise((res, rej) => {
+          const existing = [...document.scripts].find(script => script.src == src);
+          if (existing) {
+            existing.addEventListener('load', () => res(globalName ? window[globalName] : true), { once: true });
+            existing.addEventListener('error', rej, { once: true });
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.onload = () => res(globalName ? window[globalName] : true);
+          script.onerror = rej;
+          document.head.appendChild(script);
+        });
+      },
+      async convertHeicToJpeg(file) {
+        const source = file.slice ? file.slice(0, file.size, file.type || 'image/heic') : file;
+        try {
+          return await this.convertNativeImageToJpeg(source);
+        } catch (e) {
+          console.error('native heic', file.name, e);
+        }
+        try {
+          const heicTo = await this.loadScriptOnce('https://cdn.jsdelivr.net/npm/heic-to@1.4.2/dist/iife/heic-to.min.js', 'HeicTo');
+          return await heicTo({
+            blob: source,
+            type: 'image/jpeg',
+            quality: 0.92
+          });
+        } catch (e) {
+          console.error('heic-to', file.name, e);
+        }
+        const heic2anyLib = await this.loadScriptOnce('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js', 'heic2any');
+        const converted = await heic2anyLib({
+          blob: source,
+          toType: 'image/jpeg',
+          quality: 0.92
+        });
+        return Array.isArray(converted) ? converted[0] : converted;
+      },
+      convertNativeImageToJpeg(blob) {
+        return new Promise((res, rej) => {
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          const cleanup = () => URL.revokeObjectURL(url);
+          const timer = setTimeout(() => {
+            cleanup();
+            rej(new Error('native decode timeout'));
+          }, 6000);
+          img.onload = () => {
+            clearTimeout(timer);
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth || img.width;
+              canvas.height = img.naturalHeight || img.height;
+              canvas.getContext('2d').drawImage(img, 0, 0);
+              canvas.toBlob(jpeg => {
+                cleanup();
+                jpeg ? res(jpeg) : rej(new Error('native jpeg export failed'));
+              }, 'image/jpeg', 0.92);
+            } catch (e) {
+              cleanup();
+              rej(e);
+            }
+          };
+          img.onerror = () => {
+            clearTimeout(timer);
+            cleanup();
+            rej(new Error('native decode failed'));
+          };
+          img.src = url;
+        });
+      },
+      normalizeCuts() {
+        const currentImgs = this.imgs.filter(Boolean);
+        const seen = [];
+        this.cuts = this.cuts.filter(img => {
+          if (!currentImgs.includes(img) || seen.includes(img)) return false;
+          seen.push(img);
+          return true;
+        });
       },
       fabricState(fabricObject) {
         const { left, top, width, height, scaleX, scaleY, angle } = fabricObject;
@@ -425,20 +561,22 @@
         if (this.step > 0) return;
         this.tooltipText = '';
         this.alert(`<img id=loading style=height:7em src=/dobuddy/12cut/imgs/loading.gif>`,{title:'',okTitle:''});
+        let failed = 0;
         try {
           for (let file of files) {
-            if (file.type.startsWith('image/') && this.imgs.length < 12) this.imgs.push({
-              src: await new Promise(res => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                  res(e.target.result);
-                }
-                reader.readAsDataURL(file);
-              })
-            });
+            if (this.imgs.length >= 12) break;
+            if (!this.isImageFile(file)) continue;
+            try {
+              this.imgs.push({ src: await this.imageFileToDataUrl(file) });
+            } catch (e) {
+              failed++;
+              console.error('load image', file.name, e);
+            }
           }
         } catch (e) { console.error('load', e) }
+        this.normalizeCuts();
         this.alert();
+        if (failed) this.alert($t('일부 이미지를 불러오지 못했습니다. 다른 형식으로 저장한 뒤 다시 시도해주세요.'));
       },
       // 이미지 로딩시 사이즈등을 체크하여 알림창
       checkImg(el, i) {
@@ -447,6 +585,7 @@
         if (el.naturalWidth < CUT_MIN_PIXEL || el.naturalHeight < CUT_MIN_PIXEL) {
           this.alert($t('$px 미만인 이미지는 화질열화로 사용하실 수 없습니다.', [CUT_MIN_PIXEL]));
           this.imgs.splice(this.imgs.indexOf(img), 1);
+          this.normalizeCuts();
         }
       },
       // 비어있으면 업로드 차있으면 순서선택 토글
@@ -471,6 +610,8 @@
         else if (this.step == 0) {
           if (!(await this.alert($t('사진을 삭제하시겠습니까?'), { title: '삭제하기', okTitle: '삭제', confirm: true }))) return;
           this.imgs.splice(i, 1);
+          this.normalizeCuts();
+          return;
         }
         i = this.cuts.indexOf(img);
         if (i > -1) this.cuts.splice(i, 1);
@@ -491,6 +632,10 @@
       },
       async save() {
         const canvas = this.$refs.canvas, toBlob = _=>new Promise(res=>canvas.toBlob(res,'image/png'));
+        const gno=this.getCurrentGoodsNo();
+        const productSrc=this.getCompleteProductSrc(gno);
+        this.completeProductSrc=productSrc;
+        this.completeProductAlt='12cut '+gno;
         await this.commitAllCuts();
         // 인쇄용 (5000x5000)
         w = 5000;
@@ -513,32 +658,38 @@
         // await this.alert(`<img style="width:100%" src="${canvas.toDataURL('image/png')}">`, { title: '인쇄용 (5000x5000)' });
         const printPng = await toBlob();
 
-        // 썸네일용 (200x200)
+        // 썸네일용 (200x200): 관리자/주문내역에는 인쇄용 최종 이미지를 그대로 축소해 사용한다.
         w = 200;
         canvas.width = w;
         canvas.height = w;
         ctx = canvas.getContext('2d');
         await new Promise(res => {
-          const bg = new Image();
           let done = false;
           const finish = () => { if (!done) { done = true; res(); } };
-          bg.onload = () => { ctx.drawImage(bg, w / 9, w / 9, w * 7/9, w * 7/9); finish(); };
-          bg.onerror = () => {
-            const fallback = new Image();
-            fallback.onload = () => { ctx.drawImage(fallback, w / 9, w / 5, w * .672, w * 3 / 5); finish(); };
-            fallback.onerror = finish;
-            fallback.src = 'imgs/prod.png';
+          const draw = img => {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, w);
+            ctx.drawImage(img, 0, 0, w, w);
+            finish();
+          };
+          const fallback = () => {
+            const img = new Image();
+            const url = URL.createObjectURL(printPng);
+            img.onload = () => { draw(img); URL.revokeObjectURL(url); };
+            img.onerror = () => { URL.revokeObjectURL(url); finish(); };
+            img.src = url;
           };
           setTimeout(finish, 3000);
-          bg.crossOrigin = "anonymous";
-          bg.src = parent.$('.slider_goods_nav img')[0]?.src||'imgs/prod.png';
+          if (window.createImageBitmap) createImageBitmap(printPng).then(bitmap => {
+            draw(bitmap);
+            if (bitmap.close) bitmap.close();
+          }).catch(fallback);
+          else fallback();
         });
-        const cw = CUT_WIDTH / 25, ch = CUT_HEIGHT / 25
-        await this.drawCuts(ctx, w, cw, ch);
         // const thumbPng = await (await fetch(canvas.toDataURL('image/png'))).blob();
         const thumbPng = await toBlob();
         // save 
-        let gno=(new URLSearchParams(parent.location.search)).get('goodsNo')||'1000000000',price=parent.frmView?.set_goods_price?.value||'70000',body=`mode=cartIn&scmNo=1&cartMode=&set_goods_price=${price}&set_goods_fixedPrice=${price}.00&set_goods_mileage=0&set_goods_stock=2&set_coupon_dc_price=${price}.00&set_goods_total_price=0&set_option_price=0&set_option_text_price=0&set_add_goods_price=0&set_total_price=${price}&mileageFl=c&mileageGoods=0.00&mileageGoodsUnit=percent&goodsDiscountFl=y&goodsDiscount=0.00&goodsDiscountUnit=percent&taxFreeFl=t&taxPercent=10.0&scmNo=1&brandCd=001&cateCd=001&optionFl=n&goodsDeliveryFl=y&sameGoodsDeliveryFl=n&useBundleGoods=1&acePid=&event_id=&deliveryMethodFl=delivery&deliveryCollectFl=pre&goodsNo%5B%5D=${gno}&optionSno%5B%5D=14&goodsPriceSum%5B%5D=${price}&addGoodsPriceSum%5B%5D=0&couponApplyNo%5B%5D=&couponSalePriceSum%5B%5D=&couponAddPriceSum%5B%5D=&goodsCnt%5B%5D=1&optionPriceSum%5B%5D=0&option_price_0=0.00`;
+        let price=parent.frmView?.set_goods_price?.value||'70000',body=`mode=cartIn&scmNo=1&cartMode=&set_goods_price=${price}&set_goods_fixedPrice=${price}.00&set_goods_mileage=0&set_goods_stock=2&set_coupon_dc_price=${price}.00&set_goods_total_price=0&set_option_price=0&set_option_text_price=0&set_add_goods_price=0&set_total_price=${price}&mileageFl=c&mileageGoods=0.00&mileageGoodsUnit=percent&goodsDiscountFl=y&goodsDiscount=0.00&goodsDiscountUnit=percent&taxFreeFl=t&taxPercent=10.0&scmNo=1&brandCd=001&cateCd=001&optionFl=n&goodsDeliveryFl=y&sameGoodsDeliveryFl=n&useBundleGoods=1&acePid=&event_id=&deliveryMethodFl=delivery&deliveryCollectFl=pre&goodsNo%5B%5D=${gno}&optionSno%5B%5D=14&goodsPriceSum%5B%5D=${price}&addGoodsPriceSum%5B%5D=0&couponApplyNo%5B%5D=&couponSalePriceSum%5B%5D=&couponAddPriceSum%5B%5D=&goodsCnt%5B%5D=1&optionPriceSum%5B%5D=0&option_price_0=0.00`;
         const cartId = ((await(await fetch('/order/cart_ps.php',{body,headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'},method:'post'})).json()).goods||[])[0];
         if(!cartId) return this.$alert($t('카트저장에 실패하였습니다.'));
         const imageMeta = {
@@ -576,6 +727,7 @@
         this.$refs.preview.style.transform = `rotate(-${(this.selIdx++) * 30}deg)`;
       },
       async setStep(to, from) {
+        this.normalizeCuts();
         if (to > 0 && this.imgs.length < 12) {
           this.step = 0;
           return this.toast($t('12컷 선택<br>완료해주세요'));

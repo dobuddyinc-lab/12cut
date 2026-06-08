@@ -1,0 +1,111 @@
+{
+  "project": "12CUT K-pop Add-on Image Generation",
+  "date": "2026-06-08",
+  "exhibition_location": "Tokyo/Yokohama, Japan",
+  "status": "ready_for_generation_when_higgsfield_mcp_recovers",
+  "model": "gpt_image_2",
+  "settings": {
+    "resolution": "2k",
+    "quality": "medium",
+    "aspect_ratio": "4:3",
+    "expected_dimensions": "2336x1744",
+    "output_root": "assets/images/generated/kpop",
+    "file_pattern": "kpop-{setNo}-{sceneNo}-2k-medium.png"
+  },
+  "global_prefix": "Warm, cute, beautiful, emotionally memorable 12CUT slide image, fictional K-pop star memory, Tokyo/Yokohama exhibition mood, modern Korean pop culture atmosphere, cinematic editorial lifestyle photo, Kodak Portra 400 film look, warm soft highlights, natural human skin texture, clean composition, shallow depth of field, delicate film grain, 4:3 landscape photo, no text, no logo, no watermark, no 12CUT product visible.",
+  "global_negative": "real celebrity likeness, copied idol face, agency logo, group logo, real album art, readable name, readable poster, readable ticket, readable text, watermark, trademark, luxury brand mark, 12CUT product, slide viewer, toy camera, distorted face, distorted hands, extra fingers, bad anatomy, plastic skin, oversexualized pose, vulgar styling, dark gritty mood, AI artifacts, low quality",
+  "scene_sequence": [
+    "Arrival: candid pre-event moment near a station, cafe, studio, or backstage hallway.",
+    "Detail: hands adjusting accessory, in-ear monitor, ribbon, mic pouch, abstract lightstick, or bag charm.",
+    "Practice: movement rehearsal, mirror room, soft motion blur, natural sweat, non-glamorous human detail.",
+    "Quiet: seated waiting moment, warm drink, handwritten but unreadable note, soft window light.",
+    "Fan Culture: abstract fan goods, blurred photocards, blank cheering board, no readable text.",
+    "Portrait: face-visible but fictional, natural skin, non-celebrity features, warm eye contact.",
+    "Performance: stage-like light, no real venue logo, no readable LED text.",
+    "Friends/Staff: one or two supporting figures, candid laugh, not same-face clones.",
+    "Tokyo/Yokohama Context: train platform glow, Yokohama harbor night, Tokyo cafe, or street crossing atmosphere.",
+    "After Moment: tired but happy, hoodie/jacket layer, low-key post-event emotion.",
+    "Object Memory: mic silhouette, ribbon, shoe detail, tote, abstract lightstick reflection.",
+    "Closing Slide: warm collectible memory image, soft smile or atmospheric still, no text."
+  ],
+  "sets": [
+    {
+      "setNo": "01",
+      "curation_reference": "Jungkook",
+      "title": "Male Solo Performance Day",
+      "archetype_prompt": "Fictional male Korean pop soloist in his mid-20s, athletic but warm styling, soft black hair, natural face, cream bomber jacket, black practice tee, soft denim, silver in-ear detail, performance energy, clean confidence, Tokyo concert day, no real-idol likeness."
+    },
+    {
+      "setNo": "02",
+      "curation_reference": "V",
+      "title": "Editorial City Night Idol",
+      "archetype_prompt": "Fictional male K-pop editorial star in his late-20s, long charcoal coat, ivory knit, soft scarf, minimal jewelry, Yokohama night street, warm reflections, cinematic fashion memory, quiet charisma, no real-idol likeness."
+    },
+    {
+      "setNo": "03",
+      "curation_reference": "Jimin",
+      "title": "Dance Practice to Spotlight",
+      "archetype_prompt": "Fictional male K-pop dancer in his mid-20s, loose white shirt, black dance pants, soft practice jacket, graceful dance line, mirror room, hands, shoes, breath, spotlight, no real-idol likeness."
+    },
+    {
+      "setNo": "04",
+      "curation_reference": "Jennie",
+      "title": "Chic Comeback Cafe Star",
+      "archetype_prompt": "Fictional female K-pop star in her mid-20s, soft tweed jacket, modest layered cardigan, ribbon accent, denim, Tokyo fan cafe mood with abstract decorations only, chic but cute comeback memory, no real-idol likeness."
+    },
+    {
+      "setNo": "05",
+      "curation_reference": "Lisa",
+      "title": "Global Dance Break Star",
+      "archetype_prompt": "Fictional female K-pop dancer in her mid-20s, sporty jacket, cargo pants, soft metallic accent, sneakers, dynamic rehearsal, performance light, abstract stage, confident global high-energy mood, never provocative, no real-idol likeness."
+    },
+    {
+      "setNo": "06",
+      "curation_reference": "Rosé",
+      "title": "Warm Vocal Recording Day",
+      "archetype_prompt": "Fictional female vocalist in her mid-20s, soft knit, light denim, natural wavy hair, tiny pendant, warm recording booth, blurred unreadable lyric sheet, intimate voice memo, emotional warmth, no real-idol likeness."
+    },
+    {
+      "setNo": "07",
+      "curation_reference": "Jisoo",
+      "title": "Elegant Fan Meeting Day",
+      "archetype_prompt": "Fictional female idol in her mid-to-late 20s, ivory blouse, soft black skirt, pearl-like detail, cardigan, small fan-meeting room, flowers, blank cards, warm light, refined gentle trustworthy mood, no real-idol likeness."
+    },
+    {
+      "setNo": "08",
+      "curation_reference": "Karina",
+      "title": "Futuristic Tokyo Pop Star",
+      "archetype_prompt": "Fictional current-generation female K-pop star, silver-gray jacket, powder blue accent, clean black base layer, Tokyo night neon glow, abstract cyber backdrop, current sleek cool mood with 12CUT warmth, no real-idol likeness."
+    },
+    {
+      "setNo": "09",
+      "curation_reference": "Winter",
+      "title": "Clean Winter Stage Star",
+      "archetype_prompt": "Fictional female K-pop vocalist and dancer, white padded jacket, pale blue knit, silver hair clip, winter boots, winter stage prep, backstage, city lights, crisp clean delicate mood, no real-idol likeness."
+    },
+    {
+      "setNo": "10",
+      "curation_reference": "Wonyoung",
+      "title": "Bright Magazine Idol Day",
+      "archetype_prompt": "Fictional young adult female idol, pastel cardigan, white tee, soft skirt or denim, tiny hair ribbon, magazine shoot prep, flower props, pastel studio, bright fresh friendly mood, no real-idol likeness."
+    },
+    {
+      "setNo": "11",
+      "curation_reference": "Yujin",
+      "title": "Outdoor Festival Idol",
+      "archetype_prompt": "Fictional female K-pop performer, varsity jacket, white tee, denim, cap, sneakers, outdoor festival rehearsal, golden hour, Yokohama harbor air, energetic approachable mood, no real-idol likeness."
+    },
+    {
+      "setNo": "12",
+      "curation_reference": "Hanni",
+      "title": "Natural Street-Pop Idol",
+      "archetype_prompt": "Fictional young female K-pop star, oversized hoodie, pleated skirt or denim, headphones, tote, Tokyo street cafe and studio commute, natural casual relatable Gen Z softness, no real-idol likeness."
+    }
+  ],
+  "expansion_candidates": [
+    "K-pop 13 — Sakura Bridge Idol",
+    "K-pop 14 — Sana/Momo/Mina Japan-Line Dance Day",
+    "K-pop 15 — Chaewon Current-Gen Pop Mood",
+    "K-pop 16 — Nayeon Bright Senior Idol"
+  ]
+}

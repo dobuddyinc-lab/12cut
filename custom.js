@@ -200,6 +200,67 @@ const custom={
     };
     _hideFooterPartnership();
     setTimeout(_hideFooterPartnership,300);
+    var _cutFooterOriginalHtml=null;
+    var _cutFooterJa={
+      copy:'ⓒDOBUDDY',
+      ceo:'ヤンスンヨン',
+      email:'dobuddy.inc@gmail.com',
+      address:'〒162-0801<br>東京都新宿区山吹町331−4 RBW JAPANビル 2F',
+      tel:'（＋81）090-6884-5330<br>（＋81）03-6280-8849',
+      fax:'03-6280-8879'
+    };
+    var _syncCutFooter=function(){
+      var lang=_cl==='ko'?'ko':'ja',$fw=$('#footer_wrap');
+      if(!$fw.length)return;
+      if(_cutFooterOriginalHtml===null)_cutFooterOriginalHtml=$fw.html();
+      if(lang==='ko'){
+        if($fw.attr('data-cut-footer-lang')==='ja')$fw.html(_cutFooterOriginalHtml);
+        $fw.attr('data-cut-footer-lang','ko');
+        _hideFooterPartnership();
+        return;
+      }
+      var f=_cutFooterJa;
+      $fw.attr('data-cut-footer-lang','ja');
+      $fw.find('.content_info_wrap').hide();
+      var _setFootLink=function(key,label,strong){
+        var $a=$fw.find('.foot_list a[href*="'+key+'"]').first();
+        if(!$a.length)return;
+        if(strong)$a.html('<strong>'+label+'</strong>');
+        else $a.text(label);
+      };
+      _setFootLink('company.php','会社紹介');
+      _setFootLink('agreement.php','利用規約');
+      _setFootLink('private.php','プライバシーポリシー',true);
+      _setFootLink('guide.php','ご利用ガイド');
+      _setFootLink('cooperation.php','パートナーシップ');
+      $fw.find('.foot_info address strong').text(f.copy);
+      $fw.find('.foot_info address span').html('Address.<br>'+f.address);
+      var $lists=$fw.find('.foot_info_list'),$legal=$lists.eq(0).find('dl'),$contact=$lists.eq(1).find('dl');
+      $legal.show();$contact.show();
+      $legal.eq(0).find('dt').text('CEO.');$legal.eq(0).find('dd').text(f.ceo);
+      $legal.eq(1).find('dt').text('E-mail.');
+      var $email=$legal.eq(1).find('dd').empty();
+      $('<a class="btn_email">').attr('href','mailto:'+f.email).text(f.email).appendTo($email);
+      $legal.eq(2).find('dt').text('Address.');$legal.eq(2).find('dd').html(f.address);
+      $legal.eq(3).hide();
+      $contact.eq(0).find('dt').text('Tel.');$contact.eq(0).find('dd').html(f.tel);
+      $contact.eq(1).find('dt').text('FAX');$contact.eq(1).find('dd').text(f.fax);
+      $contact.eq(2).hide();
+      $contact.eq(3).hide();
+      $fw.find('.copyright').text(f.copy);
+      var $mobileFoot=$fw.find('.foot_cont>div').first();
+      if($mobileFoot.find('#sel_lang,#sel_currency').length){
+        var $tools=$mobileFoot.children('div').first().detach();
+        $mobileFoot.empty().append($tools);
+        $mobileFoot.append('<div style="margin-top:2em"><a href="../service/company.php">会社紹介</a> | <a href="../service/guide.php">ご利用ガイド</a> | <a href="../service/agreement.php">利用規約</a> | <a href="../service/private.php"><b>プライバシーポリシー</b></a></div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>'+f.copy+'</b><br>CEO. '+f.ceo+'<br>E-mail. <a style="text-decoration:underline" href="mailto:'+f.email+'">'+f.email+'</a></div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>Address.</b><br>'+f.address+'</div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>Tel.</b><br>'+f.tel+'</div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>FAX</b><br>'+f.fax+'</div>');
+      }
+    };
+    _syncCutFooter();
+    setTimeout(_syncCutFooter,300);
     _wireKakaoInquiry();
     var _ff={en:["'Nunito'",'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap'],ja:["'Zen Maru Gothic'",'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap'],zh:["'GenSenRounded2 TC'",'https://fontsapi.zeoseven.com/303/main/result.css']}[_cl];
     if(_ff){var _s=document.createElement('style');_s.textContent='@import url("'+_ff[1]+'");body,body *{font-family:'+_ff[0]+",'Pretendard Variable','Pretendard',sans-serif!important}";document.head.appendChild(_s);}
@@ -291,6 +352,7 @@ const custom={
       $('#sel_lang').val(_cl);
       $('body').removeClass('ko en ja zh').addClass(_cl);
       $('.cut-mobile-lang-btn').removeClass('is-active').filter('[data-lang="'+_cl+'"]').addClass('is-active');
+      _syncCutFooter();
       _syncCutBottomNav();
       _translateCutText(document.body);
     };
@@ -937,9 +999,9 @@ const custom={
         setBtn($('.ord-box .primary'));
         setTimeout(_=>{
           setBtn($('.sticky-order .primary'));
-          const colors={화이트:'#FFF',크림:'#FFF4EE','라이트 블루':'#EFF6FC',그린:'#019573',레드:'#DD3848','다크 그레이':'#3B3B47'};
+          const colors=[{t:'화이트',n:1000000000,c:'#FFF'},{t:'크림',n:1000000001,c:'#FFF4EE'},{t:'라이트 블루',n:1000000014,c:'#EFF6FC'},{t:'그린',n:1000000017,c:'#019573'},{t:'레드',n:1000000015,c:'#DD3848'},{t:'다크 그레이',n:1000000016,c:'#3B3B47'}];
           $('.item_info_box h2>br')[0].outerHTML=`<div class="product__colors" role="group" aria-label="색상 선택">
-            ${Object.values(colors).map(c=>`<button type=button class="product__color" style="background:${c}"></button>`).join('')}</div>`;
+            ${colors.map(o=>`<button type=button onclick="location='/goods/goods_view.php?goodsNo=${o.n}'" class="product__color" style="background:${o.c}"></button>`).join('')}</div>`;
         },700);
 
         // gallary 관련 커스텀

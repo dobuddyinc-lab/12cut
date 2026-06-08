@@ -439,6 +439,24 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **공용 파일 diff 주의**: 배포 전 라이브 pull→diff = 헝크 3개(① 약관 i18n 키 3줄, ② 내 주문요약 블록, ③ 약관페이지 `_ct`/`_cutPageTx` 블록). ②만 이번 작업, ①③은 **다른 작업창의 미배포 약관 i18n 보강분**(로컬 ⊇ 라이브, 외주 변경 0). 사용자 승인하에 **①②③ 함께 배포**.
 - **외주 통지 대상(P1)**: `global.js` 외화 분기 근본 수정(`F=1000` 하드코딩 + 총상품=`D` 오기) 요청 → 전 서비스 공통 해결. 12cut은 현재 우회 패치만 적용.
 
+#### 세션 기록 (2026-06-08 / 주문서 배송지 UI·편집기 저장 흐름·GitLab 브랜치 반영)
+- **주문서 배송지 UI 보정(`/order/order.php`)**: 상단 배송지 확인 영역에서 `Default Address`·`Recent Address`는 원본 ID(`#shippingBasic`, `#shippingRecently`)와 label 단계에서 숨김. `Same as Customer`를 먼저, `Manual Input`을 뒤로 배치. 상단 풀폭 `Address` 주소록 버튼은 `.js_shipping`으로 확인되어 제거(`display:none` + JS `remove()`), 하단 주소 섹션의 `Find Address` 버튼은 유지. 주소 도로명/상세 input은 `.address_input{display:flex;gap:12px}`로 간격 보정.
+- **동작 보강**: `Same as Customer`는 단순 `checked=true`만으로 고도몰 내부 주소 복사 이벤트가 실행되지 않는 문제가 있어, 최초 1회 실제 `MouseEvent('click')`를 발생시키고 `orderName/orderCellPhone/orderZonecode/orderAddress/orderAddressSub` → `receiver*` 필드 후보로 직접 보강 복사. `Manual Input` 선택 상태에서는 자동 복사가 덮어쓰지 않게 가드.
+- **다국어 레이아웃 함정**: 일본어 `直接入力`이 기존 수동입력 매칭식에 없어 일본어에서 위치/간격 보정이 누락됨. `직접 입력|直接入力|手動入力|Manual Input|手动输入`으로 확장. 배송 선택 영역은 `flex-wrap:nowrap` + 옵션 묶음 gap `56px`로 고정해 일본어에서도 같은 줄 유지 확인(`sameTop==manualTop`, gap 56px). 고정 190px grid는 일본어 긴 라벨을 줄바꿈시켜 폐기.
+- **편집기 저장 흐름 보강**: `editor/12cutEditor.html` 변경분도 슬라이드 프롬프트/영상 제작물이 아니라 실제 편집기 저장 안정화 변경으로 판단해 별도 커밋. 저장 시 DOM `<img>` 의존 대신 Vue `cuts[]` 데이터 기반 렌더/업로드 메타 보강 흐름 포함(상세 diff는 커밋 참조).
+- **Git 커밋/푸시**: 슬라이드 프롬프트·영상·생성 이미지 작업물(`.venv_video/`, `assets/videos/exhibition/`, `assets/images/generated/`, `MD/12CUT_*prompt*` 등)과 로컬 `.cursor/mcp.json`은 제외. 커밋 ① `31318c9 fix: 주문서 배송지 UI와 안내문 번역 보정`, ② `7a482e0 fix: 스토리 편집기 저장 흐름 보강`. `gitlab-bd2/main`은 외주/두버디 변경이 많아 direct push 거절 및 cherry-pick 충돌 발생 → main 미변경. 안전 브랜치 **`12cut-orderform-ui-20260608`** 로 push 완료(MR URL: `https://gitlab.com/keepcool.kr/202507-dobudy-bd2/-/merge_requests/new?merge_request%5Bsource_branch%5D=12cut-orderform-ui-20260608`).
+- **남은 로컬 미추적**: 슬라이드 프롬프트/영상 제작 관련 파일과 `.cursor/mcp.json`만 남김. 다음 GitLab 반영 시에도 `gitlab-bd2/main` 직접 push 금지, 원격 최신 구조(`dobuddy/12cut/*`)와 충돌 확인 후 MR 방식 권장.
+
+#### 세션 기록 (2026-06-08 / 결제수단 활성화 전 진단·장바구니 재보정 — 배포·검증됨)
+- **요구/증상**: ① 결제하기 페이지에서 "주문만 되고 결제가 안 됨" ② 장바구니 숫자 배지 오류 ③ 상품 커스텀 완료 후 `장바구니 보기`·`바로 결제하기/주문하기` 진입 시 썸네일/상품행이 보이지 않는 문제. 사용자는 최종적으로 **고도 관리자에서 카드/간편/해외 결제수단 활성화** 방향을 선택했고, PG 설정 완료 전에는 무통장만 보이는 상태 안내를 노출하기로 함.
+- **★ 결제 불가의 실제 원인**: 헤드리스로 게스트 주문 플로우를 열어 `/order/order.php?cartIdx=...` 실제 DOM을 확인한 결과, 주문서 결제수단은 **`무통장 입금` 1개만 노출**(`settleKind_gb` checked, `bankAccount` 존재, 카드/PG/간편/해외 결제 input/탭 DOM 없음). 따라서 프론트 버튼 문제로 결제창이 안 뜨는 것이 아니라 **고도 관리자/PG 계약 설정상 카드·간편·해외 결제수단이 비활성**인 상태. `custom.js`는 버튼을 `ui.clk('.btn_order_buy')`로 전달하고 있어, 결제수단이 열리면 기본 결제 로직을 탈 가능성이 높음.
+- **장바구니 상품행/썸네일 누락 원인 재검증**: 기존 `custom.js`가 `const custom={...}`만 선언해 공용 `global.js`의 `window.custom?.beforeRun` 조건에 걸리지 않음 → `beforeRun()`의 `ui.setCartList` 래퍼가 실제 라이브에서 설치되지 않았음(`ui.__cutCartFix=false`). 추가로 편집기식 `cart_ps.php` POST 직후 서버 원본 테이블에 상품행 뒤 `재고부족` 안내용 `<tr>`(input 없음)이 붙는 경우, 공용 `setCartList()`가 `tr.querySelector('input').dataset`에서 중단되어 `.cart-li`가 0개가 됨.
+- **수정(`custom.js`)**: ① 파일 하단에 `window.custom=custom` 추가해 `beforeRun()` 실제 실행 복구 ② `setCartList` 래퍼에서 input 없는 안내 `<tr>`는 렌더 전 제거하고, 상품행은 `tr.dataset.goodsno`를 보강 ③ 배지는 `_syncCutCartBadges()`로 cart/order에서는 서버 행수·`ui.gdEtc.cartCnt` 기준, 비로그인 일반 페이지에서는 stale 값을 화면에서 비움 ④ stale `localStorage.cartCnt`는 `_dropCutCartCnt()`로 `removeItem`+빈값 덮기+재삭제 처리.
+- **임시 결제 안내 UI**: `/order/order.php`에서 결제수단 탭이 **무통장 1개뿐**이면 `.cut-payment-setup-notice`를 `#my_custom .filter` 뒤에 삽입. 문구: "현재 카드/간편/해외 결제수단을 활성화 중입니다. 설정 완료 전까지는 무통장 입금만 임시로 표시됩니다." en/ja/zh도 함께 포함. 결제수단 DOM이 늦게 생기는 타이밍을 흡수하기 위해 200ms×최대 20회 폴링(`_cutPayNoticeTimer`)으로 삽입.
+- **배포·검증**: `node --check custom.js`·`ReadLints` 0. 배포 전 `custom.css`는 라이브가 로컬보다 최신이라 **수정하지 않음**(덮어쓰기 방지), `custom.js`만 라이브=로컬 확인 후 SFTP 배포. 라이브 마커 `window.custom=custom`, `_dropCutCartCnt`, `_syncCutCartBadges`, `_cutPayNoticeTimer`, `cut-payment-setup-notice` 확인. 헤드리스 검증: 편집기와 동일한 cart POST → 장바구니 `.cart-li` 1개, 썸네일 URL `https://img.12cut.net/12cut_usr/cart/{cartSno}_thumb.png`, 헤더/모바일 배지 `1`, 비로그인 stale 배지 빈값. 주문서 검증: `payTabs=["무통장 입금"]`, 안내 문구 정상 노출, `결제하기` CTA 유지.
+- **관리자 설정 필요 정보**: 고도 관리자 URL/ID/임시 비밀번호/2FA 방식, 현재 계약 PG사, 해외카드·해외통화 결제 계약 여부. **중요**: "해외 통화 표시"와 "해외카드 실제 승인"은 별개. 실제 해외 고객 결제를 목표로 하면 고도 결제수단 노출뿐 아니라 PG사의 해외카드/3DS/정산통화 설정까지 확인해야 함.
+- **외주/운영 통지 대상**: `custom.js` 변경분(`window.custom` 노출, `setCartList` 안전화, 배지 동기화, 결제수단 설정 안내). 결제수단 근본 해결은 코드가 아니라 고도 관리자/PG 설정이며, 설정 완료 후 주문서에서 카드/간편/해외 탭이 실제 DOM에 노출되는지 헤드리스로 재검증 필요.
+
 #### 미해결/다음 작업
 - **장바구니 Phase 2(보류)**: 수량 스테퍼 UI 부재가 기능 결손인지 먼저 확인 → 컬러칩·상품별 배송비 라인. JS/백엔드 의존이라 CSS 범위 밖.
 - **장바구니 빈 상태(empty-state) 보강(검토)**: 빈 카트에서 전체선택 숨김 후 `장바구니` 헤드라인→"담긴 상품 없어요" 안내로 직결. Value First 관점 추천상품 CTA 등 empty-state 설계 여지.
