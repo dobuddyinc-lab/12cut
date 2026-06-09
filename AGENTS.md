@@ -457,6 +457,14 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **관리자 설정 필요 정보**: 고도 관리자 URL/ID/임시 비밀번호/2FA 방식, 현재 계약 PG사, 해외카드·해외통화 결제 계약 여부. **중요**: "해외 통화 표시"와 "해외카드 실제 승인"은 별개. 실제 해외 고객 결제를 목표로 하면 고도 결제수단 노출뿐 아니라 PG사의 해외카드/3DS/정산통화 설정까지 확인해야 함.
 - **외주/운영 통지 대상**: `custom.js` 변경분(`window.custom` 노출, `setCartList` 안전화, 배지 동기화, 결제수단 설정 안내). 결제수단 근본 해결은 코드가 아니라 고도 관리자/PG 설정이며, 설정 완료 후 주문서에서 카드/간편/해외 탭이 실제 DOM에 노출되는지 헤드리스로 재검증 필요.
 
+#### 세션 기록 (2026-06-10 / 공통 푸터 다국어·회원가입 입력 안정화 기록 및 Git 반영)
+- **푸터 다국어 보정(`custom.js`)**: 고도 공통 푸터를 홈/비홈에서 쓰는 구조에 맞춰 `#sel_lang` 옵션 라벨을 `한국어/日本語/中文/English`로 재동기화하고, 푸터 링크·고객센터/영업시간·사업자 정보 텍스트를 ja/en/zh 상태에 맞게 후처리. 일본어 푸터는 기존 CEO/사업자 정보 노출형에서 고객지원 중심(`カスタマーサポート`, `03-6280-8849`, 운영시간/휴무/이메일/주소/Fax)으로 정리. 공통 푸터의 `foot_sns` 이미지는 12cut에서 쓰지 않으므로 숨김 유지.
+- **언어 전환 안정화(`custom.js`)**: `_applyCutLang()`에서 언어 클래스·모바일 언어 버튼·하단 앱바·푸터·텍스트 후처리를 한 번에 다시 맞추고, `#sel_lang` option 텍스트가 공용 스크립트 또는 브라우저 상태에 의해 되돌아가는 케이스를 `_syncCutLangLabels()`로 재보정.
+- **회원가입 정보입력 안정화(`/member/join.php`)**: 브라우저/고도몰 자동 복원값이 신규 가입 폼에 남는 문제를 줄이기 위해 `#formJoin`에 `autocomplete=off`, 주요 입력 필드의 자동수정/자동대문자/맞춤법 속성 해제, 사용자 입력 시작 전 한정 초기값 클리어를 추가. 아이디·비밀번호·이메일·휴대폰·주소 입력은 적절한 `inputmode`/`autocomplete`로 정리.
+- **회원가입 i18n 보강(`custom.js`, `scripts/fill_i18n.py`, `scripts/i18n_out/*`)**: 우편번호/주소검색/상세주소/휴대폰 placeholder, 생년월일 option, 주소검색 버튼, 필수·최소/최대 길이·이메일·비밀번호·아이디 사용 가능 안내 등 `/member/join.php`에서 늦게 생성되거나 검증 후 바뀌는 문구를 en/ja/zh로 보강. 로컬 `_joinTx` + `MutationObserver`로 기존 `localStorage.$lang` 캐시가 남은 사용자도 표시 문구가 즉시 보정되도록 처리.
+- **검증/커밋 범위**: `custom.js` 문법 검사와 linter 확인 후 커밋 대상은 `AGENTS.md`, `custom.js`, `scripts/fill_i18n.py`, `scripts/i18n_out/{en,ja,zh}.html`로 한정. `.cursor/`, `.live_*`, `.venv_video/`, `assets/images/generated/`, `assets/videos/exhibition/` 등 로컬 진단·영상/이미지 산출물은 커밋 제외.
+- **Git 반영 계획**: 두버디랩 GitHub(`public`)에는 `main`으로 push. 외주 GitLab(`gitlab-bd2`)은 이전처럼 원격 `main` 직접 push 충돌 리스크가 있어, 현재 `main` 커밋을 별도 브랜치로 push해 MR/흡수 대상으로 전달한다.
+
 #### 미해결/다음 작업
 - **장바구니 Phase 2(보류)**: 수량 스테퍼 UI 부재가 기능 결손인지 먼저 확인 → 컬러칩·상품별 배송비 라인. JS/백엔드 의존이라 CSS 범위 밖.
 - **장바구니 빈 상태(empty-state) 보강(검토)**: 빈 카트에서 전체선택 숨김 후 `장바구니` 헤드라인→"담긴 상품 없어요" 안내로 직결. Value First 관점 추천상품 CTA 등 empty-state 설계 여지.
