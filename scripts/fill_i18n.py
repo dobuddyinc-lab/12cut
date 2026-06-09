@@ -155,6 +155,26 @@ NEW_KEYS = {
     "구매 불가능한 상품이 존재합니다. 장바구니 상품을 확인해 주세요!": {"en": "Some items can’t be purchased. Please check the items in your cart.", "ja": "購入できない商品があります。カートの商品をご確認ください。", "zh": "购物车中有无法购买的商品，请确认购物车商品！"},
     "구매확정 하시겠습니까?": {"en": "Confirm this purchase?", "ja": "購入を確定しますか？", "zh": "确认购买吗？"},
     "재고가 부족합니다. 현재 %s개의 재고가 남아 있습니다.": {"en": "Out of stock. Only %s left in stock.", "ja": "在庫が不足しています。現在%s個の在庫が残っています。", "zh": "库存不足，当前剩余%s件。"},
+    # 회원가입 정보입력(join.php) placeholder / validation
+    "- 없이 입력하세요.": {"en": "Enter numbers only, without hyphens.", "ja": "ハイフンなしで入力してください。", "zh": "请不加连字符输入。"},
+    "우편번호": {"en": "Postal code", "ja": "郵便番号", "zh": "邮政编码"},
+    "도로명 주소 검색": {"en": "Search address", "ja": "住所を検索", "zh": "搜索地址"},
+    "상세 주소를 입력해 주세요.": {"en": "Enter detailed address.", "ja": "詳しい住所を入力してください。", "zh": "请输入详细地址。"},
+    "주소검색": {"en": "Find Address", "ja": "住所検索", "zh": "查找地址"},
+    "필수항목 입니다.": {"en": "This field is required.", "ja": "必須項目です。", "zh": "必填项。"},
+    "최소 4 이상 입력해 주세요.": {"en": "Please enter at least 4 characters.", "ja": "4文字以上入力してください。", "zh": "请输入至少4个字符。"},
+    "최소 10 이상 입력해 주세요.": {"en": "Please enter at least 10 characters.", "ja": "10文字以上入力してください。", "zh": "请输入至少10个字符。"},
+    "최대 16 이하 입력해 주세요.": {"en": "Please enter no more than 16 characters.", "ja": "16文字以下で入力してください。", "zh": "请输入不超过16个字符。"},
+    "이메일을 정확하게 입력해주세요.": {"en": "Please enter a valid email address.", "ja": "正しいメールアドレスを入力してください。", "zh": "请输入有效的邮箱地址。"},
+    "안전한 비밀번호 입니다.": {"en": "This is a secure password.", "ja": "安全なパスワードです。", "zh": "这是安全的密码。"},
+    "사용불가! 영문대/소문자, 숫자, 특수문자 중 2가지 이상 조합하세요.": {"en": "Cannot use this password. Combine at least two of uppercase/lowercase letters, numbers, and special characters.", "ja": "使用できません。英大文字/小文字、数字、特殊文字のうち2種類以上を組み合わせてください。", "zh": "不可使用。请组合英文大小写字母、数字、特殊字符中的两种以上。"},
+    "비밀번호가 서로 다릅니다.": {"en": "Passwords do not match.", "ja": "パスワードが一致しません。", "zh": "两次输入的密码不一致。"},
+    "사용가능한 아이디입니다.": {"en": "This ID is available.", "ja": "使用可能なIDです。", "zh": "该账号可用。"},
+    "사용가능한 이메일입니다.": {"en": "This email is available.", "ja": "使用可能なメールアドレスです。", "zh": "该邮箱可用。"},
+    "영문 소문자·숫자만 입력할 수 있어요": {"en": "Only lowercase letters and numbers are allowed.", "ja": "英小文字と数字のみ入力できます。", "zh": "仅可输入英文小写字母和数字。"},
+    "년": {"en": "Year", "ja": "年", "zh": "年"},
+    "월": {"en": "Month", "ja": "月", "zh": "月"},
+    "일": {"en": "Day", "ja": "日", "zh": "日"},
 }
 
 # 12cutEditor.html(스토리 만들기 편집기) 전용 키. 편집기는 /dobuddy/files/{lang}.html를

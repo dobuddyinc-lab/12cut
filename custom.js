@@ -149,7 +149,14 @@ const custom={
       _syncCutCartBadges();setTimeout(_syncCutCartBadges,500);setTimeout(_syncCutCartBadges,1200);
     }catch(e){}
     $('#sel_currency option,#sel_lang option').removeAttr('disabled');
-    var _cl=localStorage.$mylang||'ja';$('#sel_lang').val(_cl);$('body').removeClass('ko en ja zh').addClass(_cl);
+    var _syncCutLangLabels=function(){
+      var labels={ko:'한국어',ja:'日本語',zh:'中文',en:'English'};
+      $('#sel_lang option').each(function(){
+        var key=this.value||$(this).attr('value');
+        if(labels[key])$(this).text(labels[key]).attr('label',labels[key]);
+      });
+    };
+    var _cl=localStorage.$mylang||'ja';$('#sel_lang').val(_cl);$('body').removeClass('ko en ja zh').addClass(_cl);_syncCutLangLabels();
     var _syncLoginSnsButtons=function(){
       if(location.pathname!=='/member/login.php')return;
       [
@@ -202,21 +209,69 @@ const custom={
     setTimeout(_hideFooterPartnership,300);
     var _cutFooterOriginalHtml=null;
     var _cutFooterJa={
-      copy:'ⓒDOBUDDY',
-      ceo:'ヤンスンヨン',
+      supportTitle:'カスタマーサポート',
+      supportPhone:'03-6280-8849',
+      hours:'平日 09:00〜18:00',
+      closed:'土曜日 · 日曜日 · 祝日',
       email:'dobuddy.inc@gmail.com',
-      address:'〒162-0801<br>東京都新宿区山吹町331−4 RBW JAPANビル 2F',
-      tel:'（＋81）090-6884-5330<br>（＋81）03-6280-8849',
+      address:'〒162-0801<br>東京都新宿区山吹町331−4 RBW JAPANビル 2F<br>株式会社DOBUDDY',
       fax:'03-6280-8879'
     };
+    var _syncCutFooterCommon=function($fw){
+      if(!$fw||!$fw.length)return;
+      $fw.find('img[src*="foot_sns"]').hide();
+      $fw.find('.cut-footer-copy').remove();
+    };
+    var _cutFooterI18n={
+      en:{company:'About Us',agreement:'Terms of Service','private':'Privacy Policy',guide:'User Guide',cooperation:'Partnership Inquiry',supportTitle:'Customer Support',hours:'Weekdays 09:00–18:00 (Lunch 12:00–13:00)',bizInfo:'DOBUDDY Corp. Business Info'},
+      zh:{company:'公司简介',agreement:'服务条款','private':'隐私政策',guide:'使用指南',cooperation:'合作咨询',supportTitle:'客服中心',hours:'工作日 09:00–18:00（午休 12:00–13:00）',bizInfo:'株式会社DOBUDDY 企业信息'}
+    };
+    var _syncCutFooterI18n=function($fw,t){
+      var _setFootLink=function(key,label,strong){
+        var $a=$fw.find('.foot_list a[href*="'+key+'"]').first();
+        if(!$a.length)return;
+        if(strong)$a.html('<strong>'+label+'</strong>');
+        else $a.text(label);
+      };
+      _setFootLink('company.php',t.company);
+      _setFootLink('agreement.php',t.agreement);
+      _setFootLink('private.php',t['private'],true);
+      _setFootLink('guide.php',t.guide);
+      _setFootLink('cooperation.php',t.cooperation);
+      $fw.find('.foot_info address strong').text(t.supportTitle);
+      $fw.find('.foot_info_list').find('dt').each(function(){
+        var $dt=$(this),txt=$dt.text().replace(/\s+/g,' ').trim();
+        if(/운영시간|평일|영업/.test(txt))$dt.text(txt.replace(/.*/, function(){return '';}));
+      });
+      $fw.find('.foot_info_list dl').each(function(){
+        var $dl=$(this),$dt=$dl.find('dt'),$dd=$dl.find('dd'),dt=$dt.text().trim(),dd=$dd.text().trim();
+        if(/운영시간|평일|영업|09:00/.test(dt+dd)){$dt.text('Hours');$dd.text(t.hours);}
+        if(/사업자\s*정보|대표|사업자/.test(dt+dd)){$dt.text('Business');$dd.text(t.bizInfo);}
+      });
+      var $mobileFoot=$fw.find('.foot_cont>div').first();
+      if($mobileFoot.find('#sel_lang,#sel_currency').length){
+        $mobileFoot.find('a[href*="company.php"]').text(t.company);
+        $mobileFoot.find('a[href*="agreement.php"]').text(t.agreement);
+        $mobileFoot.find('a[href*="private.php"]').html('<b>'+t['private']+'</b>');
+        $mobileFoot.find('a[href*="guide.php"]').text(t.guide);
+      }
+    };
     var _syncCutFooter=function(){
-      var lang=_cl==='ko'?'ko':'ja',$fw=$('#footer_wrap');
+      var lang=_cl,$fw=$('#footer_wrap');
       if(!$fw.length)return;
       if(_cutFooterOriginalHtml===null)_cutFooterOriginalHtml=$fw.html();
+      if(lang!=='ja'&&$fw.attr('data-cut-footer-lang')==='ja')$fw.html(_cutFooterOriginalHtml);
       if(lang==='ko'){
-        if($fw.attr('data-cut-footer-lang')==='ja')$fw.html(_cutFooterOriginalHtml);
         $fw.attr('data-cut-footer-lang','ko');
         _hideFooterPartnership();
+        _syncCutFooterCommon($fw);
+        return;
+      }
+      if(lang==='en'||lang==='zh'){
+        $fw.attr('data-cut-footer-lang',lang);
+        _hideFooterPartnership();
+        _syncCutFooterI18n($fw,_cutFooterI18n[lang]);
+        _syncCutFooterCommon($fw);
         return;
       }
       var f=_cutFooterJa;
@@ -233,34 +288,42 @@ const custom={
       _setFootLink('private.php','プライバシーポリシー',true);
       _setFootLink('guide.php','ご利用ガイド');
       _setFootLink('cooperation.php','パートナーシップ');
-      $fw.find('.foot_info address strong').text(f.copy);
-      $fw.find('.foot_info address span').html('Address.<br>'+f.address);
-      var $lists=$fw.find('.foot_info_list'),$legal=$lists.eq(0).find('dl'),$contact=$lists.eq(1).find('dl');
-      $legal.show();$contact.show();
-      $legal.eq(0).find('dt').text('CEO.');$legal.eq(0).find('dd').text(f.ceo);
-      $legal.eq(1).find('dt').text('E-mail.');
-      var $email=$legal.eq(1).find('dd').empty();
-      $('<a class="btn_email">').attr('href','mailto:'+f.email).text(f.email).appendTo($email);
-      $legal.eq(2).find('dt').text('Address.');$legal.eq(2).find('dd').html(f.address);
-      $legal.eq(3).hide();
-      $contact.eq(0).find('dt').text('Tel.');$contact.eq(0).find('dd').html(f.tel);
-      $contact.eq(1).find('dt').text('FAX');$contact.eq(1).find('dd').text(f.fax);
-      $contact.eq(2).hide();
-      $contact.eq(3).hide();
-      $fw.find('.copyright').text(f.copy);
-      var $mobileFoot=$fw.find('.foot_cont>div').first();
-      if($mobileFoot.find('#sel_lang,#sel_currency').length){
-        var $tools=$mobileFoot.children('div').first().detach();
-        $mobileFoot.empty().append($tools);
-        $mobileFoot.append('<div style="margin-top:2em"><a href="../service/company.php">会社紹介</a> | <a href="../service/guide.php">ご利用ガイド</a> | <a href="../service/agreement.php">利用規約</a> | <a href="../service/private.php"><b>プライバシーポリシー</b></a></div>');
-        $mobileFoot.append('<div style="margin-top:1.5em"><b>'+f.copy+'</b><br>CEO. '+f.ceo+'<br>E-mail. <a style="text-decoration:underline" href="mailto:'+f.email+'">'+f.email+'</a></div>');
-        $mobileFoot.append('<div style="margin-top:1.5em"><b>Address.</b><br>'+f.address+'</div>');
-        $mobileFoot.append('<div style="margin-top:1.5em"><b>Tel.</b><br>'+f.tel+'</div>');
-        $mobileFoot.append('<div style="margin-top:1.5em"><b>FAX</b><br>'+f.fax+'</div>');
+      var $footInfo=$fw.find('.foot_info').first();
+      if($footInfo.length){
+        $footInfo.html(
+          '<address><strong>'+f.supportTitle+'</strong><span><a href="tel:'+f.supportPhone+'" style="color:inherit">'+f.supportPhone+'</a></span></address>'
+          +'<div class="foot_info_list">'
+            +'<dl><dt>受付時間 :</dt><dd>'+f.hours+'</dd></dl>'
+            +'<dl><dt>定休日 :</dt><dd>'+f.closed+'</dd></dl>'
+            +'<dl><dt>E-mail :</dt><dd><a href="mailto:'+f.email+'" class="btn_email">'+f.email+'</a></dd></dl>'
+            +'<dl><dt>Address :</dt><dd>'+f.address+'</dd></dl>'
+          +'</div>'
+          +'<div class="foot_info_list">'
+            +'<dl><dt>Fax :</dt><dd>'+f.fax+'</dd></dl>'
+          +'</div>'
+          +'<p class="copyright">'+_cutFooterCopy+'</p>'
+        );
       }
+      var $mobileFoot=$fw.find('.foot_cont>div').first();
+      if($mobileFoot.length){
+        var $tools=$mobileFoot.children('div').first().detach();
+        $mobileFoot.empty();
+        if($tools.length)$mobileFoot.append($tools);
+        $mobileFoot.append('<div style="margin-top:2em"><a href="../service/company.php">会社紹介</a> | <a href="../service/guide.php">ご利用ガイド</a> | <a href="../service/agreement.php">利用規約</a> | <a href="../service/private.php"><b>プライバシーポリシー</b></a></div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>'+f.supportTitle+'</b><br><a href="tel:'+f.supportPhone+'" style="color:inherit">'+f.supportPhone+'</a></div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>受付時間</b><br>'+f.hours+'</div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>定休日</b><br>'+f.closed+'</div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>E-mail</b><br><a style="text-decoration:underline" href="mailto:'+f.email+'">'+f.email+'</a></div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>Address</b><br>'+f.address+'</div>');
+        $mobileFoot.append('<div style="margin-top:1.5em"><b>Fax</b><br>'+f.fax+'</div>');
+        $mobileFoot.append('<div style="margin-top:1.5em">'+_cutFooterCopy+'</div>');
+      }
+      _syncCutFooterCommon($fw);
     };
     _syncCutFooter();
     setTimeout(_syncCutFooter,300);
+    setTimeout(_syncCutFooter,1000);
+    setTimeout(_syncCutFooter,2000);
     _wireKakaoInquiry();
     var _ff={en:["'Nunito'",'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap'],ja:["'Zen Maru Gothic'",'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap'],zh:["'GenSenRounded2 TC'",'https://fontsapi.zeoseven.com/303/main/result.css']}[_cl];
     if(_ff){var _s=document.createElement('style');_s.textContent='@import url("'+_ff[1]+'");body,body *{font-family:'+_ff[0]+",'Pretendard Variable','Pretendard',sans-serif!important}";document.head.appendChild(_s);}
@@ -349,10 +412,12 @@ const custom={
     };
     var _applyCutLang=function(lang){
       if(lang)_cl=lang;
+      _syncCutLangLabels();
       $('#sel_lang').val(_cl);
       $('body').removeClass('ko en ja zh').addClass(_cl);
       $('.cut-mobile-lang-btn').removeClass('is-active').filter('[data-lang="'+_cl+'"]').addClass('is-active');
       _syncCutFooter();
+      _syncCutLangLabels();
       _syncCutBottomNav();
       _translateCutText(document.body);
     };
@@ -657,12 +722,69 @@ const custom={
           $('#formJoin .f input[name="zonecode"]').attr('placeholder',$t('우편번호'));
           $('#formJoin .f input[name="address"]').attr('placeholder',$t('도로명 주소 검색'));
           $('#formJoin .f input[name="addressSub"]').attr('placeholder',$t('상세 주소를 입력해 주세요.'));
+          var _prepareEmptyJoinForm=function(){
+            var $form=$('#formJoin');
+            if(!$form.length||$form.data('cutJoinEmptyReady'))return;
+            $form.data('cutJoinEmptyReady',1).attr('autocomplete','off');
+            var _attrs={autocomplete:'off',autocorrect:'off',autocapitalize:'none',spellcheck:'false'};
+            $('#memId').prop({disabled:false,readOnly:false}).attr($.extend({},_attrs,{inputmode:'latin'}));
+            $('#newPassword,[name="memPwRe"]').attr({autocomplete:'new-password',autocorrect:'off',autocapitalize:'none',spellcheck:'false'});
+            $('[name="memNm"]').attr(_attrs);
+            $('#email').attr($.extend({},_attrs,{inputmode:'email'}));
+            $('#cellPhone,#phone').attr($.extend({},_attrs,{inputmode:'numeric'}));
+            $('[name="zonecode"],[name="zipcode"],[name="address"],[name="addressSub"]').attr(_attrs);
+            var userStarted=false;
+            $form.one('pointerdown keydown focusin','input,select,textarea',function(){userStarted=true;});
+            var clearRestored=function(){
+              if(userStarted)return;
+              $('#memId,#newPassword,[name="memPwRe"],[name="memNm"],#email,#cellPhone,#phone,[name="zonecode"],[name="zipcode"],[name="address"],[name="addressSub"]').val('');
+              $('#maillingFl,#smsFl').prop('checked',false).next('label').removeClass('on');
+            };
+            clearRestored();
+            setTimeout(clearRestored,500);
+            setTimeout(clearRestored,1200);
+          };
+          _prepareEmptyJoinForm();
+          var _joinTx={
+            en:{'- 없이 입력하세요.':'Enter numbers only, without hyphens.','우편번호':'Postal code','도로명 주소 검색':'Search address','상세 주소를 입력해 주세요.':'Enter detailed address.','주소검색':'Find Address','필수항목 입니다.':'This field is required.','최소 4 이상 입력해 주세요.':'Please enter at least 4 characters.','최소 10 이상 입력해 주세요.':'Please enter at least 10 characters.','최대 16 이하 입력해 주세요.':'Please enter no more than 16 characters.','이메일을 정확하게 입력해주세요.':'Please enter a valid email address.','안전한 비밀번호 입니다.':'This is a secure password.','사용불가! 영문대/소문자, 숫자, 특수문자 중 2가지 이상 조합하세요.':'Cannot use this password. Combine at least two of uppercase/lowercase letters, numbers, and special characters.','비밀번호가 일치하지 않습니다.':'Passwords do not match.','비밀번호가 서로 다릅니다.':'Passwords do not match.','사용가능한 아이디입니다.':'This ID is available.','사용가능한 이메일입니다.':'This email is available.','영문 소문자·숫자만 입력할 수 있어요':'Only lowercase letters and numbers are allowed.','년':'Year','월':'Month','일':'Day','직접입력':'Enter directly'},
+            ja:{'- 없이 입력하세요.':'ハイフンなしで入力してください。','우편번호':'郵便番号','도로명 주소 검색':'住所を検索','상세 주소를 입력해 주세요.':'詳しい住所を入力してください。','주소검색':'住所検索','필수항목 입니다.':'必須項目です。','최소 4 이상 입력해 주세요.':'4文字以上入力してください。','최소 10 이상 입력해 주세요.':'10文字以上入力してください。','최대 16 이하 입력해 주세요.':'16文字以下で入力してください。','이메일을 정확하게 입력해주세요.':'正しいメールアドレスを入力してください。','안전한 비밀번호 입니다.':'安全なパスワードです。','사용불가! 영문대/소문자, 숫자, 특수문자 중 2가지 이상 조합하세요.':'使用できません。英大文字/小文字、数字、特殊文字のうち2種類以上を組み合わせてください。','비밀번호가 일치하지 않습니다.':'パスワードが一致しません。','비밀번호가 서로 다릅니다.':'パスワードが一致しません。','사용가능한 아이디입니다.':'使用可能なIDです。','사용가능한 이메일입니다.':'使用可能なメールアドレスです。','영문 소문자·숫자만 입력할 수 있어요':'英小文字と数字のみ入力できます。','년':'年','월':'月','일':'日','직접입력':'直接入力'},
+            zh:{'- 없이 입력하세요.':'请不加连字符输入。','우편번호':'邮政编码','도로명 주소 검색':'搜索地址','상세 주소를 입력해 주세요.':'请输入详细地址。','주소검색':'查找地址','필수항목 입니다.':'必填项。','최소 4 이상 입력해 주세요.':'请输入至少4个字符。','최소 10 이상 입력해 주세요.':'请输入至少10个字符。','최대 16 이하 입력해 주세요.':'请输入不超过16个字符。','이메일을 정확하게 입력해주세요.':'请输入有效的邮箱地址。','안전한 비밀번호 입니다.':'这是安全的密码。','사용불가! 영문대/소문자, 숫자, 특수문자 중 2가지 이상 조합하세요.':'不可使用。请组合英文大小写字母、数字、特殊字符中的两种以上。','비밀번호가 일치하지 않습니다.':'密码不一致。','비밀번호가 서로 다릅니다.':'两次输入的密码不一致。','사용가능한 아이디입니다.':'该账号可用。','사용가능한 이메일입니다.':'该邮箱可用。','영문 소문자·숫자만 입력할 수 있어요':'仅可输入英文小写字母和数字。','년':'年','월':'月','일':'日','직접입력':'直接输入'}
+          }[_cl]||{};
+          var _jt=function(s){return _joinTx[s]||_ct(s);};
+          var _syncJoinText=function(root){
+            root=root||document.getElementById('formJoin');
+            if(!root)return;
+            var $root=$(root),_setPh=function(q,k){$root.find(q).attr('placeholder',_jt(k));};
+            _setPh('#cellPhone,#phone','- 없이 입력하세요.');
+            _setPh('input[name="zonecode"]','우편번호');
+            _setPh('input[name="address"]','도로명 주소 검색');
+            _setPh('input[name="addressSub"]','상세 주소를 입력해 주세요.');
+            $root.find('#btnPostcode,.btn_post_search').each(function(){var $e=$(this);if($.trim($e.text())||this.value){if(this.value)this.value=_jt('주소검색');else $e.text(_jt('주소검색'));}});
+            $root.find('#birthYear option[value=""],#birthYear option:first').first().text(_jt('년'));
+            $root.find('#birthMonth option[value=""],#birthMonth option:first').first().text(_jt('월'));
+            $root.find('#birthDay option[value=""],#birthDay option:first').first().text(_jt('일'));
+            $root.find('#emailDomain option[value="self"],#emailDomain option:first').first().text(_jt('직접입력'));
+            $root.find('*').addBack().contents().filter(function(){return this.nodeType===3;}).each(function(){
+              var raw=this.nodeValue,t=$.trim(raw);
+              if(t&&_joinTx[t])this.nodeValue=raw.replace(t,_joinTx[t]);
+            });
+            $root.find('input,button,a').each(function(){
+              var $e=$(this),v=$.trim(this.value||$e.text()),p=this.placeholder;
+              if(v&&_joinTx[v]){if(this.value)this.value=_joinTx[v];else $e.text(_joinTx[v]);}
+              if(p&&_joinTx[p])this.placeholder=_joinTx[p];
+            });
+          };
+          _syncJoinText();
+          if(!window.__cutJoinTxWatch&&window.MutationObserver){
+            window.__cutJoinTxWatch=1;
+            new MutationObserver(function(){clearTimeout(window.__cutJoinTxTimer);window.__cutJoinTxTimer=setTimeout(function(){_syncJoinText();},30);}).observe(document.getElementById('formJoin'),{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','value']});
+          }
           var _bd=$('#formJoin .f>.member_warning').filter(function(){return $(this).find('select').length;});
           if(_bd.length&&!_bd.parent().hasClass('bday-row'))_bd.wrapAll('<div class="bday-row"></div>');
           var _id=$('#memId');
           if(_id.length&&!_id.next('.join-id-warn').length){
             var _w=$('<p class="join-id-warn"></p>').insertAfter(_id),_t;
-            var _show=function(){_w.text($t('영문 소문자·숫자만 입력할 수 있어요')).addClass('show');clearTimeout(_t);_t=setTimeout(function(){_w.removeClass('show');},2500);};
+            var _show=function(){_w.text(_jt('영문 소문자·숫자만 입력할 수 있어요')).addClass('show');clearTimeout(_t);_t=setTimeout(function(){_w.removeClass('show');},2500);};
             _id.on('compositionstart',_show);
             _id.on('beforeinput',function(e){var d=(e.originalEvent||e).data;if(d&&/[^A-Za-z0-9]/.test(d))_show();});
           }
