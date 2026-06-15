@@ -465,7 +465,34 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 - **검증/커밋 범위**: `custom.js` 문법 검사와 linter 확인 후 커밋 대상은 `AGENTS.md`, `custom.js`, `scripts/fill_i18n.py`, `scripts/i18n_out/{en,ja,zh}.html`로 한정. `.cursor/`, `.live_*`, `.venv_video/`, `assets/images/generated/`, `assets/videos/exhibition/` 등 로컬 진단·영상/이미지 산출물은 커밋 제외.
 - **Git 반영 계획**: 두버디랩 GitHub(`public`)에는 `main`으로 push. 외주 GitLab(`gitlab-bd2`)은 이전처럼 원격 `main` 직접 push 충돌 리스크가 있어, 현재 `main` 커밋을 별도 브랜치로 push해 MR/흡수 대상으로 전달한다.
 
+#### 세션 기록 (2026-06-12 / 공식 도메인 www.12cut.net 전환 계획 + B2B 문의 모달 초안 — ★미커밋·미배포)
+- **상세 핸드오프 = `MD/HANDOFF_home_20260612.md`** (재개 시 이 문서 먼저 읽을 것). 도메인 전환 전체 계획 = `MD/DOMAIN_MIGRATION_www-12cut-net.md`.
+- **도메인 전환 결정**: 대표(canonical) TO-BE = `www.12cut.net`. 기존 `12cut.co.kr`은 삭제하지 않고 301 존치(SEO 이전). `img.12cut.net`(미디어/API)은 불변. 실행 순서 = Phase 0(DNS/고도관리자/OAuth 콘솔 확보) → 1(DNS+고도 도메인 연결+SSL) → 2(대표 전환+301 헤더 검증) → 3(코드 치환·SFTP) → 4(GSC/네이버/OG 캐시) → 5(검증). **코드보다 인프라 선행** — 사람이 해야 할 작업(DNS·고도몰·OAuth redirect URI 등록)이 블로커. ※ 참고: `https://12cut.net/`은 현재도 고도 사이트가 응답함(06-13 전시영상 캡쳐에 사용) — 대표 전환·301·SSL 검증은 별개로 남음.
+- **도메인 비종속 코드 치환(로컬 완료)**: 홈 CTA 2곳(`skin/main/index.html`·`index.html`) `https://12cut.co.kr/goods/...` → `/goods/goods_view.php?goodsNo=1000000000` 상대경로화, `custom.css`의 Google SNS 아이콘 `url(https://12cut.co.kr/dobuddy/imgs/sns_google.png)` → `url(/dobuddy/imgs/sns_google.png)`. **원칙**: 내부 링크=상대경로 / og:url·canonical·sitemap=절대 URL(`https://www.12cut.net/...`).
+- **B2B 비즈니스 문의 모달 초안(`custom.js` +97줄, 로컬만)**: 파일 하단 IIFE로 푸터에 B2B CTA 삽입 + `?biz=1` 쿼리 자동 오픈 + `window.openB2B` 공개. ja/ko/en/zh 4개 언어 i18n(`b2bI18n`), 필드 = 문의유형/회사명/담당자/이메일/전화/지역/내용/개인정보동의. 제출 = Google Apps Script Web App에 JSON POST(12cut/donut 공통 수신 설계, `B2B_BRAND='12CUT'`).
+- **★ 배포 차단 블로커**: `B2B_ENDPOINT='https://script.google.com/macros/s/REPLACE_WITH_DEPLOYED_WEB_APP_ID/exec'`가 **placeholder** → 이 상태로 `custom.js` 라이브 배포 금지(폼은 열리지만 제출 실패). 해결 = ① Apps Script Web App 생성·doPost→공통 Sheet 적재 ② URL 교체 ③ 익명 `fetch`(Content-Type:text/plain) CORS 확인 ④ 실제 제출 테스트 후 배포. 급하면 Option A = B2B 블록 보류하고 도메인 치환분만 먼저 배포.
+- **mypage i18n 보조 스크립트**: `scripts/add_mypage_i18n.py` — 마이페이지 스킨 키 6개(`나의 주문현황`·`회원님`·`환영합니다!` 등)를 **라이브 사전(`/tmp/live_{lang}.html`)에 additive 주입**해 `/tmp/up_{lang}.html` 생성하는 방식(레포 i18n_out이 라이브보다 stale라 base 재생성 금지 원칙 반영). 업로드 여부는 라이브 사전 curl로 확인 필요.
+- **커밋 계획(핸드오프 문서 §4)**: ① `docs: record www domain migration plan` ② `fix: make homepage links domain agnostic`(custom.css·index.html·skin/main/index.html) ③ endpoint 완료 후 `feat: add business inquiry form`(custom.js). 현재 전부 working tree에만 있음(`main`=`b0c53f8`).
+
+#### 세션 기록 (2026-06-12~13 / 일본 전시 영상 — UGC·홈 필름릴 캡쳐 제작, 로컬 산출물만)
+- **요구 변천(방향 3회 전환)**: ① 홈 슬라이드 릴 감성의 합성 릴 영상 → ② "이 방향 아니다" → Higgsfield Marketing Studio로 **인플루언서 UGC** → ③ "그냥 홈화면 슬라이드 릴을 그대로 캡쳐" = **라이브 홈의 실제 `.film-reel` DOM 캡쳐**로 확정. 모두 전시용 세로 9:16, QR은 영상 밖 실물 보드 원칙 유지.
+- **산출물 ① (폐기 후보)**: `assets/videos/exhibition/12cut-home-reel-jp-exhibition-no-qr.mp4` — `assets/images/generated/` 6테마(lover/friends/travel/pets/wedding/idol) 이미지를 PIL+ffmpeg 파이프로 필름릴 롤링 합성(1080×1920·24fps·60s·34MB·무음). 스크립트 `scripts/render_home_reel_exhibition_video.py`. 사용자가 방향 기각 → **폐기 후보**.
+- **산출물 ② (UGC)**: `assets/videos/exhibition/12cut-ugc-jp-exhibition-9x16.mp4` — Higgsfield **Marketing Studio**(`webproduct=https://12cut.net/`, UGC 계열)로 생성한 일본어 인플루언서 소개 영상(720×1280·24fps·15s·7.1MB). Marketing Studio 프리셋 9종 중 UGC가 전시 Activation에 적합 판단. hooks/settings는 UGC·Tutorial·Unboxing·Product Review·UGC Virtual Try On만 지원.
+- **산출물 ③ (최종)**: `assets/videos/exhibition/12cut-home-film-reel-capture-9x16.mp4` — **라이브 `https://12cut.net/#examples`를 Puppeteer로 열어 홈 `.film-reel`(원형 12슬롯 링 + 렌즈) 실제 DOM을 프레임 캡쳐** 후 ffmpeg 합성(1080×1920·24fps·48s·8.1MB). 스크립트 `scripts/record_home_film_reel.cjs`(프레임 디렉터리 `home_reel_capture_frames/`).
+- **캡쳐 기법(재현용)**: 홈 JS의 2초 간격 자동회전은 전시에선 빠름 → 원본 타이머 우회하고 **가상 타임라인으로 컷 전환·마퀴 위치를 프레임마다 직접 구동**(`stepDuration=3.2초/컷`, 마퀴는 `scrollWidth/2` 기준 translateX 수동 오프셋). nav/모바일헤더/공용 marquee는 CSS 주입으로 숨기고, `.examples__marquee`(필름릴 키워드 띠)는 상단에 크게 노출(`span` 폰트 확대). 잘리던 사각형 가이드는 삭제 대신 릴 축소·재배치로 화면 안에 수납. 피드백 반영 이력: 속도 4.0→3.2초/컷, 글자 확대, 마퀴 노출, 사각형 보이게.
+- **세션 초입 인벤토리 확인**: `assets/videos/exhibition/` 약 3.2GB/7,200파일. 기존 최종 후보 = `12cut-exhibition-actual-service-5theme-rolling.mp4`(5테마 롤링 3m35s)·`12cut-exhibition-actual-service-fullscreen-no-qr.mp4`(43s). 생성 이미지 = 문서상 40세트×12장=480장 vs 로컬 PNG 483장(3장 차이, 커밋 전 최종본 선별 필요).
+
+#### 세션 기록 (2026-06-13 / 5테마 롤링 영상 가이드 오버레이(guided) 버전 제작 — 로컬 산출물만)
+- **요구**: `12cut-exhibition-actual-service-5theme-rolling.mp4`(실제 편집기 UI 녹화 기반)에 전시 관람객용 시각 가이드 추가 — 커서 이동·클릭 대상 강조·단계 구분. 반복 피드백으로 **테두리 강조 삭제 → 이니셜 카드 삭제 → 콜아웃 삭제** 후 최종 = ① 커서(화살표)가 **실제 클릭 트리거 위치로만 이동**(줌인아웃 애니 없음) ② 단계 전환 시 **잠깐 멈춤+딤 처리+중앙 큰 단계 텍스트 2초** 구조로 수렴.
+- **산출물**: `assets/videos/exhibition/12cut-exhibition-actual-service-5theme-guided.mp4`(1080×1920·24fps·265s=테마당 43s+2초 정지×5·27MB) + `...-guided-contact-sheet.jpg`. 재생성 스크립트 = `scripts/add_exhibition_guidance_overlay.py`. 원본 rolling.mp4는 보존.
+- **★ 핵심 기법 — 추정 좌표 금지, 실측 웨이포인트**: 1차 커서 동선은 추정 좌표라 트리거와 어긋남 → 원본에서 24개 시점 프레임을 추출해 실제 버튼/트리밍 핸들 위치를 측정 후 **시각별 웨이포인트 테이블 `CURSOR_WAYPOINTS`(시간·x·y 32지점)** 로 교체. 커서 tip이 트리거에 정확히 닿게 좌표 산정. 동선: STORY GUIDE 닫기✕ → 첫 썸네일 → 사진 12장 동그라미 순차(0.45s 간격, 배지 1→12 속도 동기) → `追加` 확정(피커 닫히기 전 12.6s로 당김) → `順番を選択`→`トリミング` → **트리밍 사각형 우하단 빨간 핸들(줌 진행 따라 추적)** → `ストーリーをプレビュー` → 휠 → `閉じる` → `ストーリーを保存` → `今すぐ決済する`.
+- **단계 정지(딤+텍스트) 경계도 실측 교정**: 가이드 닫힘 4.3s / 사진 선택 완료 13.5s / 프리뷰 진입 28.6s / 완료 38.4s(기존 21.2s "プレビュー"는 실제론 트리밍 화면이었음). 검증 = 7개 시점 프레임 추출로 커서 tip 적중 육안 확인.
+
 #### 미해결/다음 작업
+- **★ B2B 문의 엔드포인트(P0, `custom.js` 배포 차단 중)**: `B2B_ENDPOINT`가 placeholder(`REPLACE_WITH_DEPLOYED_WEB_APP_ID`) → Apps Script Web App 생성·Sheet 적재·CORS 확인·제출 테스트 완료 전 **`custom.js` 커밋/배포 금지**. 급하면 B2B 블록 보류하고 도메인 치환분만 분리 배포(`MD/HANDOFF_home_20260612.md` §2C·§3 참조).
+- **★ 도메인 전환 인프라(사람 작업)**: `12cut.net` DNS 콘솔 확인 → 고도 관리자 `www.12cut.net` 연결·SSL → 대표 전환+`12cut.co.kr` 301 헤더 검증 → 소셜 OAuth(카카오/네이버/구글/페북) redirect URI에 신 도메인 추가 → GSC 주소변경/네이버 등록. 계획서 = `MD/DOMAIN_MIGRATION_www-12cut-net.md`.
+- **06-12 변경분 커밋(미실행)**: working tree에만 있음 — ① 도메인 계획 문서 ② 도메인 비종속 치환(custom.css·index.html·skin/main/index.html) ③ B2B(endpoint 해결 후). 전시 영상은 mp4/contact sheet만 커밋할지 프레임 디렉터리 포함할지 결정 필요(현재 3.2GB).
+- **전시 영상 최종 후보 확정**: 후보 3종 공존 — `5theme-guided.mp4`(사용법 안내형·커서 가이드), `home-film-reel-capture-9x16.mp4`(브랜드 릴 감성형), `ugc-jp-exhibition-9x16.mp4`(인플루언서 소개형). 전시 모니터 수/배치에 따라 단독 또는 조합 선택 + QR 실물 보드 준비. `home-reel-jp-exhibition-no-qr.mp4`는 폐기 후보.
 - **장바구니 Phase 2(보류)**: 수량 스테퍼 UI 부재가 기능 결손인지 먼저 확인 → 컬러칩·상품별 배송비 라인. JS/백엔드 의존이라 CSS 범위 밖.
 - **장바구니 빈 상태(empty-state) 보강(검토)**: 빈 카트에서 전체선택 숨김 후 `장바구니` 헤드라인→"담긴 상품 없어요" 안내로 직결. Value First 관점 추천상품 CTA 등 empty-state 설계 여지.
 - **외주 통지(장바구니)**: `custom.css` `.body-cart` Phase 1 + 막판 2건 변경 → 공용 파일이라 diff 공유 필요.

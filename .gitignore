@@ -5,6 +5,7 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+.cursor/
 *.swp
 
 # Vercel
@@ -20,6 +21,7 @@ npm-debug.log*
 # Dependency directories
 node_modules/
 .venv/
+.venv_video/
 
 # Backup originals (deleted)
 assets/images/originals/
@@ -54,7 +56,12 @@ dev/
 # 임시 스크래치/로그
 ._*
 lc.txt
+.live_*
 
 # 대용량 미디어 소스(처리방침 미결 — 추적 보류)
 Delicate_*.jpeg
 assets/videos/*.mp4
+assets/images/generated/
+assets/videos/exhibition/home_reel_capture_frames/
+assets/마운트용/
+assets/원형/

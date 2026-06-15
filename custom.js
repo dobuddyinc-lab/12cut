@@ -1112,6 +1112,7 @@ const custom={
         $('.cart-div a[href]').toArray().forEach(e=>{e.href=e.firstChild.src.replace('_thumb','');e.download='12cut.png'});
         break;
       case '/goods/goods_view.php':
+        $('body').addClass('body-goods-view');
         $('.item_info_box .hide').off('click').click(_=>ui.clk('.ord-box .primary'));
         const setBtn=e=>e.attr('style','background-color:#F63237!important;border-color:#F63237').off('click').attr('onclick','').text($t('스토리 만들기'))
         .click(_=>{
@@ -1125,6 +1126,36 @@ const custom={
           $('.item_info_box h2>br')[0].outerHTML=`<div class="product__colors" role="group" aria-label="색상 선택">
             ${colors.map(o=>`<button type=button onclick="location='/goods/goods_view.php?goodsNo=${o.n}'" class="product__color" style="background:${o.c}"></button>`).join('')}</div>`;
         },700);
+        const _goodsLang=localStorage.$mylang||_cl||'ja';
+        const _goodsTx={
+          en:{'배송정보':'Shipping Info','결제 완료일 기준 영업일 2~3일 이내 출고':'Ships within 2-3 business days after payment is completed','택배 배송':'Parcel delivery','주문시 결제':'Paid at checkout','우체국택배':'Korea Post','50,000원 이상 구매 시 무료':'Free shipping on orders over KRW 50,000','상세설명':'Details','채팅상담':'Chat Support','반품/교환정보':'Returns / Exchanges','返品/交換情報':'Returns / Exchanges'},
+          ja:{'배송정보':'配送情報','결제 완료일 기준 영업일 2~3일 이내 출고':'決済完了日から2〜3営業日以内に出荷','택배 배송':'宅配便','주문시 결제':'ご注文時に決済','우체국택배':'韓国郵便局宅配','50,000원 이상 구매 시 무료':'50,000ウォン以上のご購入で送料無料','상세설명':'詳細説明','채팅상담':'チャット相談','반품/교환정보':'返品・交換情報','返品/交換情報':'返品・交換情報'},
+          zh:{'배송정보':'配送信息','결제 완료일 기준 영업일 2~3일 이내 출고':'支付完成后2-3个工作日内发货','택배 배송':'快递配送','주문시 결제':'下单时支付','우체국택배':'韩国邮政快递','50,000원 이상 구매 시 무료':'满50,000韩元免运费','상세설명':'详细说明','채팅상담':'在线咨询','반품/교환정보':'退货/换货信息','返品/交換情報':'退货/换货信息'}
+        };
+        const _goodsTr=s=>((_goodsTx[_goodsLang]&&_goodsTx[_goodsLang][s])||(_goodsLang!=='ko'&&_goodsTx.en[s])||s);
+        const _applyGoodsI18n=root=>{
+          if(_goodsLang==='ko')return;
+          $(root||document).find('*').addBack().contents().filter(function(){
+            return this.nodeType===3&&!$(this.parentNode).is('script,style,textarea');
+          }).each(function(){
+            let raw=this.nodeValue,next=raw;
+            Object.keys(_goodsTx[_goodsLang]||_goodsTx.en).sort((a,b)=>b.length-a.length).forEach(k=>{next=next.split(k).join(_goodsTr(k));});
+            if(next!==raw)this.nodeValue=next;
+          });
+        };
+        const _hideGoodsSocialIcons=root=>{
+          $(root||document).find('img,svg').filter(function(){
+            const v=[this.src,this.alt,this.className&&this.className.baseVal||this.className,$(this).attr('aria-label'),$(this).attr('title')].join(' ').toLowerCase();
+            return /facebook|kakao|naver|페이스북|카카오|네이버/.test(v);
+          }).each(function(){
+            const $host=$(this).closest('a,button,li');
+            ($host.length?$host:$(this)).addClass('cut-goods-social-hidden');
+          });
+        };
+        _applyGoodsI18n(document);
+        _hideGoodsSocialIcons(document);
+        setTimeout(()=>{_applyGoodsI18n(document);_hideGoodsSocialIcons(document);},500);
+        setTimeout(()=>{_applyGoodsI18n(document);_hideGoodsSocialIcons(document);},1200);
 
         // gallary 관련 커스텀
         const start = () => {
@@ -1238,3 +1269,100 @@ window.custom=custom;
 $(_=>{
   $('.menus').hide();
 });
+// ===== B2B 비즈니스 문의 (12컷 / 도넛과 공통 수신, 브랜드별 CTA 분리) =====
+(function(){
+  var B2B_ENDPOINT='https://script.google.com/macros/s/REPLACE_WITH_DEPLOYED_WEB_APP_ID/exec';
+  var B2B_BRAND='12CUT';
+  var b2bI18n={
+    ja:{cta:'法人・店舗のお問い合わせ',title:'ビジネスお問い合わせ',lead:'導入・提携・店舗運営・広告/コラボに関するご相談を承ります。担当者より折り返しご連絡いたします。',brand:'ブランド',type:'お問い合わせ種類',company:'会社名',name:'ご担当者名',email:'メールアドレス',phone:'電話番号',region:'地域',message:'お問い合わせ内容',types:['導入相談','提携相談','店舗相談','広告・コラボ','その他'],agree:'個人情報の取り扱いに同意します',submit:'送信する',sending:'送信中…',ok:'お問い合わせを受け付けました。担当者より折り返しご連絡いたします。',err:'送信に失敗しました。お手数ですが時間をおいて再度お試しください。',required:'必須項目をすべてご入力ください。',invalidEmail:'メールアドレスの形式が正しくありません。',placeholderMsg:'ご相談内容をご記入ください。'},
+    ko:{cta:'비즈니스 문의',title:'비즈니스 문의',lead:'도입·제휴·매장 운영·광고/협업 관련 상담을 받습니다. 담당자가 확인 후 회신드립니다.',brand:'브랜드',type:'문의 유형',company:'회사명',name:'담당자명',email:'이메일',phone:'전화번호',region:'지역',message:'문의 내용',types:['도입 상담','제휴 상담','매장 상담','광고·협업','기타'],agree:'개인정보 수집·이용에 동의합니다',submit:'보내기',sending:'전송 중…',ok:'문의가 접수되었습니다. 담당자가 확인 후 회신드립니다.',err:'전송에 실패했습니다. 잠시 후 다시 시도해 주세요.',required:'필수 항목을 모두 입력해 주세요.',invalidEmail:'이메일 형식이 올바르지 않습니다.',placeholderMsg:'문의 내용을 입력해 주세요.'},
+    en:{cta:'Business Inquiry',title:'Business Inquiry',lead:'We welcome inquiries about partnerships, store operations, advertising and collaboration. Our team will get back to you.',brand:'Brand',type:'Inquiry Type',company:'Company',name:'Contact Name',email:'Email',phone:'Phone',region:'Region',message:'Message',types:['Onboarding','Partnership','Store','Ad / Collaboration','Other'],agree:'I agree to the collection and use of my personal data',submit:'Send',sending:'Sending…',ok:'Your inquiry has been received. Our team will get back to you.',err:'Failed to send. Please try again later.',required:'Please fill in all required fields.',invalidEmail:'The email format is invalid.',placeholderMsg:'Please describe your inquiry.'},
+    zh:{cta:'企业·门店咨询',title:'企业咨询',lead:'我们受理引进、合作、门店运营、广告/联名等咨询，专员将尽快与您联系。',brand:'品牌',type:'咨询类型',company:'公司名称',name:'联系人',email:'邮箱',phone:'电话',region:'地区',message:'咨询内容',types:['引进咨询','合作咨询','门店咨询','广告·联名','其他'],agree:'我同意收集和使用个人信息',submit:'发送',sending:'发送中…',ok:'已收到您的咨询，专员将尽快与您联系。',err:'发送失败，请稍后再试。',required:'请填写所有必填项。',invalidEmail:'邮箱格式不正确。',placeholderMsg:'请填写咨询内容。'}
+  };
+  var lang=({ko:1,ja:1,en:1,zh:1}[localStorage.$mylang])?localStorage.$mylang:'ja';
+  var t=function(){return b2bI18n[lang]||b2bI18n.ja;};
+  var esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  function injectStyle(){
+    if(document.getElementById('b2b_style'))return;
+    var css='.b2b-cta{display:inline-block;padding:11px 20px;border:1px solid currentColor;border-radius:50px;font-weight:700;text-decoration:none;cursor:pointer}'
+      +'.b2b-modal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}'
+      +'.b2b-box{width:100%;max-width:460px;max-height:90vh;overflow-y:auto;background:#fff;border-radius:16px;padding:24px;box-sizing:border-box}'
+      +'.b2b-title{display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:700;color:#111;margin:0}'
+      +'.b2b-close{cursor:pointer;font-size:18px;color:#999}'
+      +'.b2b-lead{margin:10px 0 0;font-size:13px;line-height:1.6;color:#777}'
+      +'.b2b-form{margin-top:20px;display:flex;flex-direction:column;gap:16px}'
+      +'.b2b-form label{position:relative;display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:600;color:#333}'
+      +'.b2b-form label.req>span::after{content:"*";margin-left:3px;color:#0092FB;font-weight:700}'
+      +'.b2b-form input,.b2b-form select,.b2b-form textarea{width:100%;box-sizing:border-box;height:46px;padding:0 14px;border:1px solid #e0e0e0;border-radius:10px;font-family:inherit;font-size:14px;font-weight:400;line-height:1.4;color:#111;background:#fff;transition:border-color .15s}'
+      +'.b2b-form input::placeholder,.b2b-form textarea::placeholder{color:#bbb}'
+      +'.b2b-form input:hover,.b2b-form select:hover,.b2b-form textarea:hover{border-color:#cfcfcf}'
+      +'.b2b-form input:focus,.b2b-form select:focus,.b2b-form textarea:focus{outline:none;border-color:#111}'
+      +'.b2b-form select{appearance:none;-webkit-appearance:none;-moz-appearance:none;padding-right:40px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'%3E%3Cpath fill=\'none\' stroke=\'%23999\' stroke-width=\'1.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M1 1.5 6 6.5 11 1.5\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}'
+      +'.b2b-form textarea{height:auto;min-height:104px;padding:12px 14px;resize:vertical;line-height:1.6}'
+      +'.b2b-form .b2b-agree{flex-direction:row;align-items:center;gap:8px;font-size:13px;font-weight:400;color:#555;cursor:pointer}'
+      +'.b2b-form .b2b-agree input{width:18px;height:18px;flex:0 0 18px;padding:0;accent-color:#111;cursor:pointer}.b2b-form .b2b-agree::after{content:none}'
+      +'.b2b-submit{margin-top:4px;height:52px;padding:0;border:0;border-radius:12px;background:#111;color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s}'
+      +'.b2b-submit:hover{opacity:.88}.b2b-submit:disabled{opacity:.5;cursor:default}'
+      +'.b2b-status{font-size:13px;line-height:1.5;text-align:center}.b2b-status.ok{color:#0a8a3a}.b2b-status.err{color:#d33}';
+    var s=document.createElement('style');s.id='b2b_style';s.textContent=css;document.head.appendChild(s);
+  }
+  function formHtml(brand){
+    var x=t();
+    return '<form id="b2bForm" class="b2b-form" novalidate>'
+      +'<input type="hidden" name="brand" value="'+esc(brand)+'">'
+      +'<label class="req"><span>'+x.type+'</span><select name="type" required>'+x.types.map(function(o){return '<option value="'+esc(o)+'">'+esc(o)+'</option>';}).join('')+'</select></label>'
+      +'<label class="req"><span>'+x.company+'</span><input name="company" type="text" required autocomplete="organization"></label>'
+      +'<label class="req"><span>'+x.name+'</span><input name="name" type="text" required autocomplete="name"></label>'
+      +'<label class="req"><span>'+x.email+'</span><input name="email" type="email" required autocomplete="email"></label>'
+      +'<label><span>'+x.phone+'</span><input name="phone" type="tel" autocomplete="tel"></label>'
+      +'<label><span>'+x.region+'</span><input name="region" type="text"></label>'
+      +'<label class="req"><span>'+x.message+'</span><textarea name="message" rows="4" required placeholder="'+esc(x.placeholderMsg)+'"></textarea></label>'
+      +'<label class="b2b-agree"><input name="agree" type="checkbox" required> <span>'+x.agree+'</span></label>'
+      +'<div class="b2b-status" role="status" aria-live="polite"></div>'
+      +'<button type="submit" class="b2b-submit" tabindex="0" aria-label="'+esc(x.submit)+'">'+x.submit+'</button>'
+      +'</form>';
+  }
+  function setStatus(formEl,msg,kind){var el=formEl.querySelector('.b2b-status');el.textContent=msg;el.className='b2b-status'+(kind?' '+kind:'');}
+  function submit(formEl,onDone){
+    var x=t();
+    var fd=new FormData(formEl);var data={};fd.forEach(function(v,k){data[k]=v;});
+    if(!data.company||!data.name||!data.email||!data.message||!formEl.querySelector('[name="agree"]').checked){setStatus(formEl,x.required,'err');return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)){setStatus(formEl,x.invalidEmail,'err');return;}
+    var btn=formEl.querySelector('.b2b-submit');var orig=btn.textContent;btn.disabled=true;btn.textContent=x.sending;setStatus(formEl,'','');
+    data.lang=lang;data.source=location.href;
+    fetch(B2B_ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)})
+      .then(function(){setStatus(formEl,x.ok,'ok');formEl.reset();if(onDone)setTimeout(onDone,1600);})
+      .catch(function(err){console.error('[B2B] submit failed',err);setStatus(formEl,x.err,'err');})
+      .then(function(){btn.disabled=false;btn.textContent=orig;});
+  }
+  function open(brand){
+    brand=brand||B2B_BRAND;
+    if(document.getElementById('b2b_modal'))return;
+    injectStyle();
+    var x=t();
+    document.body.insertAdjacentHTML('beforeend','<div id="b2b_modal" class="b2b-modal"><div class="b2b-box"><h2 class="b2b-title">'+x.title+'<i class="b2b-close" role="button" tabindex="0" aria-label="close">\u2715</i></h2><p class="b2b-lead">'+x.lead+'</p>'+formHtml(brand)+'</div></div>');
+    var modal=document.getElementById('b2b_modal');
+    var close=function(){modal.parentNode&&modal.parentNode.removeChild(modal);};
+    var cb=modal.querySelector('.b2b-close');
+    cb.onclick=close;cb.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();close();}};
+    modal.addEventListener('click',function(e){if(e.target===modal)close();});
+    modal.querySelector('#b2bForm').addEventListener('submit',function(e){e.preventDefault();submit(e.currentTarget,close);});
+  }
+  window.openB2B=open;
+  function placeCta(){
+    var host=document.querySelector('.footer__links')||document.getElementById('footer_wrap')||document.querySelector('.footer');
+    if(!host||host.querySelector('.b2b-link'))return;
+    injectStyle();
+    var x=t();
+    var a=document.createElement('a');
+    a.className='b2b-link';a.href='?biz=1';a.setAttribute('role','button');a.tabIndex=0;a.setAttribute('aria-label',x.cta);
+    a.style.cssText='color:inherit;font-weight:400;cursor:pointer';a.textContent=x.cta;
+    a.addEventListener('click',function(e){e.preventDefault();open();});
+    a.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+    host.appendChild(a);
+  }
+  $(function(){
+    placeCta();setTimeout(placeCta,500);setTimeout(placeCta,1500);
+    if(/[?&]biz(=|&|$)/.test(location.search))setTimeout(function(){open();},300);
+  });
+})();

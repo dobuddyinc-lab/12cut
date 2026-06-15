@@ -71,6 +71,16 @@ body>.marquee{display:none!important}
 .cut-hide-wish-link{display:none!important}
 a.cut-hide-mypage-link,li.cut-hide-mypage-link,dd.cut-hide-mypage-link{display:none!important}
 .cut-hide-footer-link{display:none!important}
+.body-goods-view .cut-goods-social-hidden,
+.body-goods-view a:has(>img[src*="facebook" i]),
+.body-goods-view a:has(>img[src*="kakao" i]),
+.body-goods-view a:has(>img[src*="naver" i]),
+.body-goods-view img[src*="facebook" i],
+.body-goods-view img[src*="kakao" i],
+.body-goods-view img[src*="naver" i],
+.body-goods-view img[alt*="페이스북"],
+.body-goods-view img[alt*="카카오"],
+.body-goods-view img[alt*="네이버"]{display:none!important}
 .cut-kakao-inline{color:var(--cut-primary)!important;font-weight:700!important;text-decoration:underline!important;text-underline-offset:2px!important}
 .body-main #wrap,.body-main .top_area,.body-main #container,.body-main #contents,.body-main .sub_content,.body-main .content_box{display:block!important;max-width:none!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;float:none!important;background:none!important}
 .body-main .nav__my-link{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;border-radius:50%!important;text-decoration:none!important}
@@ -153,6 +163,16 @@ body:not(.body-main):has(.cut-mobile-header) .bd2-logo{display:none!important}
 .item_photo_slide .slider_goods_nav li a{display:block!important;width:100%!important;height:auto!important;box-sizing:border-box!important}
 .item_photo_slide .slider_goods_nav li img{width:100%!important;height:auto!important;padding:5px!important;margin:0!important;box-sizing:border-box!important}
 }
+@media screen and (max-width:850px){
+.body-goods .item_photo_big{width:100%!important;height:min(76vw,300px)!important;margin:0 auto 12px!important;box-sizing:border-box!important;overflow:hidden!important}
+.body-goods .item_photo_big .img_photo_big{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important}
+.body-goods .item_photo_big .img_photo_big img{width:100%!important;height:100%!important;object-fit:contain!important}
+.body-goods .item_photo_slide .slider_goods_nav{display:none!important}
+.body-goods .item_info_box{margin-top:12px!important;padding-bottom:132px!important}
+.body-goods .product__colors{display:flex!important;align-items:center!important;gap:10px!important;width:100%!important;margin:12px 0 6px!important;padding:10px 0!important;box-sizing:border-box!important;position:relative!important;z-index:3!important}
+.body-goods .product__colors::before{content:'COLOR';display:inline-flex!important;align-items:center!important;margin-right:2px;color:#777;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1!important}
+.body-goods button.product__color{flex:0 0 30px!important;width:30px!important;height:30px!important;margin:0!important;border:1px solid rgba(0,0,0,.1)!important;border-radius:50%!important;box-shadow:0 2px 8px rgba(0,0,0,.18)!important}
+}
 
 /* ───── 로그인(.body-login) 소셜-퍼스트 리디자인 ───── */
 /* global.css의 input[type]{height:auto!important;padding!important}, --primary:#000 브랜드 버튼 !important를 이기기 위해 !important+높은 specificity 사용 */
@@ -194,7 +214,7 @@ body:not(.body-main):has(.cut-mobile-header) .bd2-logo{display:none!important}
 .body-login .sns_btn.cut-sns-unavailable{display:none!important}
 .body-login .sns_btn__ico{width:20px;height:20px;background:no-repeat center/contain;position:absolute;left:18px;display:flex;align-items:center;justify-content:center}
 .body-login .sns_btn__ico svg{width:20px;height:20px;display:block}
-.body-login .sns_btn__ico--google{background-image:url(https://12cut.co.kr/dobuddy/imgs/sns_google.png)}
+.body-login .sns_btn__ico--google{background-image:url(/dobuddy/imgs/sns_google.png)}
 .body-login .sns_btn--google{background:#fff;border-color:#E0E0E0;color:#1a1a1a}
 .body-login .sns_btn--google:active{background:#F5F5F5}
 .body-login .sns_btn__ico--apple svg{fill:#fff}

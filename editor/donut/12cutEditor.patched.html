@@ -1,0 +1,532 @@
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=yes">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/data/skin/front/moment/css/common/common.css?ts=1733744573">
+  <link rel="stylesheet" href="global.css">
+  <script type="text/javascript" src="/data/skin/front/moment/js/jquery/jquery.min.js?ts=1618896613"></script>
+  <script type="text/javascript" src="/data/skin/front/moment/js/slider/slick/slick.js?ts=1618896613"></script>
+  <script type="text/javascript" src="/data/skin/front/moment/js/fabric/fabric.min.js?ts=1682057379"></script>
+  <script src="vue.min.js"></script>
+</head>
+
+<body style="overflow:hidden" class="cut12">
+  <div @mousedown="closeTooltip()" @touchstart="closeTooltip()" id="app" :data-step="step"
+    style="padding:4em 0;text-align:center;overflow-y:auto;overflow-x:hidden;height:calc(100vh - 9em)">
+    <!-- 텝메뉴와 가이드문구 -->
+    <div v-if="step<3" class="tabs">
+      <div :class="step==0&&'active'" @click="step=0">
+        <t v-text="$t('12컷 선택')"></t> <small v-text="`(${imgs.length}/12)`"></small>
+      </div>
+      <div :class="step==1&&'active'" @click="if(step<1)nextStep();else step=1" data-t v-text="$t('순서 선택')"></div>
+      <div :class="step==2&&'active'" @click="if(step<2)nextStep();else step=2" data-t v-text="$t('트리밍')"></div>
+    </div>
+    <template v-if="step==0">
+      <div data-t v-if="imgs.length==0" class="tab-guide fade-in"
+        v-html="$t('<b>‘12컷 선택’ 버튼</b>을 누르고<br>빈 슬라이드에 12컷을 추가해주세요.😊')"></div>
+      <div data-t v-if="imgs.length>0 && imgs.length<12" class="tab-guide fade-in"
+        v-html="$t('<b>$</b>컷 추가됬어요.<br><b>$</b>컷 더 추가해주세요.😊',[imgs.length,12-imgs.length])"></div>
+      <div data-t v-if="imgs.length>11" class="tab-guide fade-in"
+        v-html="$t('<b>12</b>컷 선택이 완료되었어요.😊<br><b>“순서 선택” 버튼</b>을 눌러주세요.')"></div>
+    </template>
+    <div data-t v-if="step==1" class="tab-guide fade-in"
+      v-html="$t('슬라이드에 나오는 사진의 순서를 정해주세요. 😊<br>완료되면, <b>“트리밍” 버튼</b>을 눌러주세요.')"></div>
+    <div data-t v-if="step==2" class="tab-guide fade-in"
+      v-html="$t('필름 사이즈에 알맞게 트리밍하세요. 😊<br>완료되면, <b>“스토리 미리보기” 버튼</b>을 눌러주세요.')"></div>
+    <div data-t v-if="step>2" class="tab-guide fade-in"
+      v-html="$t('사진에 마우스 휠 또는 터치로 회전해서,<br>순서에 맞게 제대로 적용됬는지 확인해보세요 😊')">
+    </div>
+    <!-- 트리밍 -->
+    <div v-if="step==2">
+      <div class="trim-fabric fade-in">
+        <canvas ref="fabric"></canvas>
+      </div>
+    </div>
+    <!-- 파일업로드 부분: 드래그앤드롭, 멀티선택 지원 / 비어있으면 업로드 차있으면 순서선택 토글 -->
+    <div v-if="step<3" @dragover.prevent @drop.prevent="load($event.dataTransfer.files)" class="imgs fade-in">
+      <div :data-i="step==2 ? i : step==0 ? (imgs[i-1] ? 'X' : undefined) : (cuts.indexOf(imgs[i-1])+1 || '')"
+        v-for="i of 12" class="load">
+        <img v-if="step==2" :class="i-1==selIdx&&'active'" :style="{opacity:imgs[i-1]?1:0}" @click="sel(i-1)"
+          :src="cuts[i-1].cut||cuts[i-1].src">
+        <img v-else :style="{opacity:imgs[i-1]?1:0}" @load="checkImg($event.target, i-1)" @click="sel(i-1)"
+          :src="imgs[i-1]&&imgs[i-1].src">
+      </div>
+      <div v-if="step==1" class="btns"><a data-t @click="cuts=[]" style="width:80%;margin-top:1em"
+          v-text="$t('사진 순서 초기화')"></a></div>
+      <input ref="file" @change="load($event.target.files)" type="file" multiple accept="image/*"
+        style="height:0;opacity:0">
+    </div>
+    <!-- 미리보기 -->
+    <div v-if="step==3" @click="preview()" @touchmove="preview()" @mousewheel="preview()"
+      :class="['fade-in',isFull&&'full']">
+      <div ref="preview" class="preview">
+        <div class="cut" :data-i="i" v-for="i of 12" :key="i" :style="{transform:`rotate(${30*(i-1)}deg)`}">
+          <img ref="cut" :src="cuts[i-1].cut">
+        </div>
+      </div>
+      <img v-if="!isFull" style="margin-top:42vw;width:15vw" src="imgs/heart.png">
+    </div>
+    <!-- 타이틀바 -->
+    <div
+      style="background:#fff;padding:0 1em;position:fixed;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:center">
+      <a @click="window.parent.$('.item_info_btn_editer').click()"><i style="font-size:120%" class="bi bi-x-lg"></i></a>
+      <h3 @dblclick="window.localStorage.removeItem('12cut_guide');alert('ok')" data-t v-text="$t('스토리만들기')"></h3>
+      <div>
+        <!-- <span style="font-size:120%;color:var(--primary)">{{step==0?Math.min(12,cuts.length+1):selIdx}}</span>/12 -->
+      </div>
+    </div>
+    <!-- 하단버튼 -->
+    <div class="btns foot" style="z-index:1">
+      <a data-t v-if="!isFull" @click="if(step<1){step=0;imgs=[];cuts=[]}else step--" v-text="$t(step>2 ?
+        '트리밍':['처음부터다시','12컷 선택','순서선택'][step])"></a>
+      <a data-t v-if="!isFull" :disabled="(step==0&&imgs.length<12)||(step>0&&cuts.length<12)" @click="nextStep()"
+        class="primary" v-text="$t(step>2 ? '스토리 저장하기':['순서선택','트리밍','스토리 미리보기'][step])"></a>
+      <a v-if="isFull" style="width:80%" @click="isFull=false" class="primary" v-text="$t('닫기')"></a>
+    </div>
+    <canvas ref="canvas" style="display:none"></canvas>
+    <div v-if="alertData.html" class="alert fade-in">
+      <div>
+        <h2 data-t class="title" style="margin-top:0" v-text="$t(alertData.title||'알림')"></h2>
+        <div data-t style="color:#999;margin-bottom:1.5em" v-html="alertData.html"></div>
+        <div class="btns">
+          <a data-t v-if="alertData.confirm" @click="alertData.resolve()" v-text="$t('취소')"></a>
+          <a data-t @click="alertData.resolve(1)" class="primary" v-text="$t(alertData.okTitle||'확인')"></a>
+        </div>
+      </div>
+    </div>
+    <div data-t v-if="tooltipText" ref="tooltip" :style="tooltipPos" class="tooltip-bubble fade-in"
+      @click="tooltipText=''" v-html="$t(tooltipText)">
+    </div>
+    <div data-t v-if="toastHtml" class="toast alert fade-out" @click="toastHtml=''" v-html="toastHtml"></div>
+    <div data-t v-if="isLandscape" class="toast alert" v-html="$t('세로방향으로<br>이용해주세요')"></div>
+  </div>
+  <div class="guide fade-in">
+    <div class="guide-content">
+      <div class="guide-bar">
+        <div>
+          <img style="height:1em" src="imgs/12cut.png">
+          <img style="height:1em" src="imgs/guide.png">
+        </div>
+        <i class="spin bi bi-hypnotize"></i>
+      </div>
+      <div class="carusel">
+        <div>
+          <h3 data-t>1단계: 12장 선택하기</h3>
+          <p data-t>'슬라이드 섬네일'을 클릭하시고<br>사진을 선택해 주세요.<br><br>나누고 간직할 이야기들을<br>당신만의 스토리로 만들어 보세요.</p>
+        </div>
+        <div>
+          <h3 data-t>2단계: 순서 선택하기</h3>
+          <p data-t>슬라이드에 나오는<br>사진의 순서를 정해주세요.<br><br>시간 순이 아니어도 괜찮아요.<br>감정의 흐름으로 연결해보세요.</p>
+        </div>
+        <div>
+          <h3 data-t>3단계: 사진 트리밍하기</h3>
+          <p data-t>더 멋진 스토리를 위해서<br>이야기의 한 장면들을<br>완벽하게 트리밍하세요.<br><br>줌과 회전으로 중요한 순간을<br>강조해 보세요.</p>
+        </div>
+      </div>
+    </div>
+    <div
+      style="margin-top:auto;display:flex;justify-content:space-between;align-items:center;color:#fff;padding:0.5em 1em">
+      <span onclick="hideSlick(true)"><i style="font-size:120%;margin-right:10px" class="bi bi-check-circle"></i>
+        <t>다시 보지 않기</t>
+      </span>
+      <i onclick="hideSlick()" class="bi bi-x-lg"></i>
+    </div>
+  </div>
+</body>
+
+<script>
+  window.$lang = {};// 다국어 처리용
+  function $t(txt, params) {
+    if (!txt) return txt;
+    txt = $lang[txt] || txt;
+    // $t("$와 $님께",["A","B"]) => "A와 B님께" 로 치환합니다.
+    if (Array.isArray(params)) for (const p of params) txt = txt.replace('$', p);
+    return txt;
+  };
+  // 일반페이지의 다국어 공통스크립트
+  // fetch(`/editor/${navigator.language}.html`).then(r => r.text().then(r => {
+  //   localStorage.$lang = r; $lang = JSON.parse(r);
+  // $('[t,data-t]').each((_, el) => {
+  //   const t = el.dataset.t || el.innerHTML.trim();
+  //   el.innerHTML = $lang[t] || t;
+  // });
+  // }));
+  function hideSlick(save) {
+    if (save) localStorage.setItem('12cut_guide', 1);
+    $('.carusel').slick('unslick');
+    $('.guide>div:first-child').css({ height: 0 });
+    $('.guide').css({ opacity: 0 });
+    setTimeout(() => $('.guide').remove(), 500);
+    if (!isTest) $vm.tooltip('.load', '클릭하면 이미지를 선택할 수 있어요');
+  };
+  $(() => {
+    $('.carusel:not(.slick-initialized)').slick({ dots: true, arrows: false });
+    setTimeout(() => { if (localStorage.getItem('12cut_guide')) hideSlick(); }, 500);
+    $(window).on("resize", () => $vm.isLandscape = innerHeight < 430);
+  });
+  fabric.Object.prototype.setControlsVisibility({
+    mb: false,
+    ml: false,
+    mt: false,
+    mr: false
+  });
+  fabric.Object.prototype.set({
+    snapAngle: 5, //5씩 회전
+    transparentCorners: false,
+    cornerColor: "rgba(255,0,0,0.6)",
+    // cornerStrokeColor: 'none',
+    borderColor: "rgba(255,0,0,0.6)",
+    borderScaleFactor: 3,
+    cornerSize: 25,
+    touchCornerSize: 150,
+    // padding: 10,
+    // cornerStyle: "circle"
+  });
+
+  // [회전 핸들 아이콘] donutEditor.html 개선판 이식 — 빨간 원 + 흰 회전 화살표
+  const rotateImg = new Image();
+  const rotateSvg = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.6271 7.0636C13.627 10.6882 10.6885 13.6261 7.06363 13.6261C3.43874 13.6261 0.500294 10.6882 0.500159 7.0636C0.500159 3.43885 3.43866 0.500122 7.06364 0.500122C10.6886 0.500165 13.6271 3.43888 13.6271 7.0636Z" fill="#FF7373" stroke="white"/><path d="M9.87373 10.5451L8.26594 10.5451C8.15934 10.5451 8.0571 10.5027 7.98172 10.4273C7.90634 10.352 7.864 10.2497 7.864 10.1431L7.864 8.53542C7.864 8.42882 7.90634 8.32659 7.98172 8.25121C8.0571 8.17584 8.15934 8.13349 8.26594 8.13349C8.37255 8.13349 8.47478 8.17584 8.55016 8.25121C8.62554 8.32659 8.66789 8.42882 8.66789 8.53542L8.66789 9.17181L8.92916 8.91055C9.40452 8.43756 9.67269 7.79523 9.67477 7.12465L9.67477 7.11025C9.67622 6.44566 9.41595 5.80722 8.95026 5.33305C8.87573 5.25684 8.83452 5.15413 8.83572 5.04754C8.83691 4.94094 8.8804 4.83919 8.95662 4.76466C9.03285 4.69013 9.13555 4.64893 9.24215 4.65012C9.34875 4.65132 9.45051 4.69481 9.52504 4.77102C10.1382 5.39543 10.4808 6.23616 10.4787 7.11125L10.4787 7.12867C10.4763 8.01149 10.1234 8.85722 9.49758 9.47995L9.23732 9.74121L9.87373 9.74121C9.98034 9.74121 10.0826 9.78355 10.158 9.85893C10.2333 9.9343 10.2757 10.0365 10.2757 10.1431C10.2757 10.2497 10.2333 10.352 10.158 10.4273C10.0826 10.5027 9.98034 10.5451 9.87373 10.5451ZM5.43791 9.05826C4.97197 8.58385 4.71168 7.945 4.7134 7.28006L4.7134 7.26566C4.71548 6.59509 4.98365 5.95275 5.45901 5.47976L5.72028 5.21951L5.72028 5.8559C5.72028 5.96249 5.76263 6.06473 5.83801 6.1401C5.91339 6.21548 6.01562 6.25782 6.12223 6.25782C6.22883 6.25782 6.33106 6.21548 6.40644 6.1401C6.48182 6.06473 6.52417 5.96249 6.52417 5.8559L6.52417 4.24818C6.52417 4.14158 6.48182 4.03935 6.40644 3.96398C6.33107 3.8886 6.22883 3.84625 6.12223 3.84625L4.51444 3.84625C4.40783 3.84625 4.3056 3.8886 4.23022 3.96397C4.15484 4.03935 4.11249 4.14158 4.11249 4.24818C4.11249 4.35478 4.15484 4.45701 4.23022 4.53239C4.3056 4.60776 4.40783 4.65011 4.51444 4.65011L5.15085 4.65011L4.88959 4.91136C4.26416 5.53426 3.91165 6.37997 3.90951 7.26265L3.90951 7.2814C3.90738 8.1565 4.24997 8.99723 4.86313 9.62163C4.90003 9.65937 4.94401 9.68947 4.99255 9.71022C5.04109 9.73096 5.09323 9.74194 5.14602 9.74253C5.1988 9.74312 5.25118 9.73331 5.30017 9.71366C5.34916 9.69401 5.39381 9.6649 5.43155 9.628C5.46929 9.59109 5.49939 9.54712 5.52013 9.49858C5.54088 9.45004 5.55186 9.3979 5.55245 9.34512C5.55304 9.29234 5.54323 9.23996 5.52358 9.19097C5.50393 9.14198 5.47482 9.09734 5.43791 9.0596L5.43791 9.05826Z" fill="white"/></svg>`;
+  rotateImg.onload = () => {
+    const rotateActionHandler = fabric.controlsUtils?.rotationWithSnapping || fabric.Object.prototype.controls?.mtr?.actionHandler;
+    fabric.Object.prototype.controls.mtr = new fabric.Control({
+      x: 0, y: -0.5, offsetY: -40,
+      actionHandler(eventData, transform, x, y) {
+        transform.originX = transform.originY = 'center';
+        return rotateActionHandler(eventData, transform, x, y);
+      },
+      render(ctx, left, top, styleOverride, fabricObject) {
+        ctx.save();
+        ctx.translate(left, top);
+        ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+        ctx.drawImage(rotateImg, -13, -13, 26, 26);
+        ctx.restore();
+      },
+      touchSizeX: 50,
+      touchSizeY: 50,
+    });
+  };
+  rotateImg.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(rotateSvg);
+
+  let toastTimer, tooltipTimer, isTest = location.hostname == '127.0.0.1';
+  const CUT_WIDTH = 847, CUT_HEIGHT = 739, CUT_MIN_PIXEL = 847;
+  window.onbeforeunload = () => '편집중인 스토리가 삭제됩니다.';
+  window.$vm = new Vue({
+    el: '#app',
+    data: {
+      window, isLandscape: false,
+      alertData: { html: '' }, tooltipText: '', tooltipPos: {}, toastHtml: '',
+      cuts: [], // {src:원본, cut:트리밍, fabric:트리밍편집}
+      imgs: [], // cuts 순서이전의 원본 레퍼런스
+      fabric: null,
+      step: 0,
+      selIdx: 0, isFull: false,
+    },
+    // computed: { isLandscape() { return window.innerHeight < 430 } },
+    methods: {
+      closeTooltip() {
+        if (this.tooltipText == '') return;
+        this.$refs.tooltip.style.opacity = 0;
+        setTimeout(() => {
+          // if (this.tooltipText == '레드 포인트를 움직이면<br>줌/회전을 할 수 있어요')
+          //   setTimeout(() => this.tooltip({ top: '20em', left: 'calc(50vw - 64px)' }, '드래그하면 회전할 수 있어요'), 500);
+          this.$refs.tooltip.style.opacity = 1;
+          this.tooltipText = '';
+        }, 500);
+      },
+      async tooltip(selector, text) {
+        // clearTimeout(tooltipTimer);
+        if (this.tooltipText) {
+          this.tooltipText = '';
+          await this.$nextTick();
+        }
+        this.tooltipText = text;
+        if (typeof selector == 'string') {
+          const el = document.querySelector(selector);
+          if (!el) return;
+          const { x, y, width, height } = el.getBoundingClientRect();
+          this.tooltipPos = { left: Math.max(5, x + width / 2 - 60) + 'px', top: (y + height + 10) + 'px' };
+          // console.log({ x, y, width, height }, this.tooltipPos.left);
+        }
+        else this.tooltipPos = selector;
+        // tooltipTimer = setTimeout(() => this.tooltipText = '', 3000);
+      },
+      async toast(html) {
+        if (this.toastHtml) {
+          clearTimeout(toastTimer);
+          this.toastHtml = '';
+          await this.$nextTick();
+        }
+        this.toastHtml = html;
+        toastTimer = setTimeout(() => this.toastHtml = '', 3000);
+      },
+      alert(html, { title, okTitle, confirm } = {}) {
+        if (!html) return this.alertData.html = '';
+        return new Promise(res => {
+          this.alertData.resolve = ok => {
+            this.alertData.html = '';
+            res(ok);
+          }
+          this.alertData.html = html;
+          this.alertData.title = title || '알림';
+          this.alertData.okTitle = okTitle || '확인';
+          this.alertData.confirm = confirm;
+        });
+      },
+      // 드래그앤드롭이나 파일일선택창으로 멀티선택된 파일 읽기
+      async load(files) {
+        if (this.step > 0) return;
+        this.alert('loading...');
+        try {
+          for (let file of files) {
+            if (file.type.startsWith('image/') && this.imgs.length < 12) this.imgs.push({
+              src: await new Promise(res => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                  if (this.imgs.length < 1) this.tooltip('.load', '클릭하면 이미지를 삭제할 수 있어요');
+                  res(e.target.result);
+                }
+                reader.readAsDataURL(file);
+              })
+            });
+          }
+        } catch (e) { console.error('load', e) }
+        this.alert();
+      },
+      // 이미지 로딩시 사이즈등을 체크하여 알림창
+      checkImg(el, i) {
+        const img = this.imgs[i];
+        if (!img) return;
+        if (el.naturalWidth < CUT_MIN_PIXEL || el.naturalHeight < CUT_MIN_PIXEL) {
+          this.alert(`${CUT_MIN_PIXEL}px 미만인 이미지는 화질열화로 사용하실 수 없습니다.`);
+          this.imgs.splice(this.imgs.indexOf(img), 1);
+        }
+      },
+      // 비어있으면 업로드 차있으면 순서선택 토글
+      async sel(i) {
+        this.selIdx = i;
+        if (this.step == 2) {
+          this.fabric.remove(...this.fabric.getObjects());
+          let img = await new Promise(res => fabric.Image.fromURL(this.cuts[i].src, img => res(img)));
+          let { width: w, height: h } = this.fabric;
+          const xywh = this.cuts[this.selIdx].fabric;
+          if (xywh) img.set(xywh);
+          else {
+            if (img.height * 1.146 > img.width) img.scaleToHeight(h / 2);
+            else img.scaleToWidth(w / 2 + 60);
+            // if (img.height * 1.146 > img.width) img.scaleToHeight(h / 2 + 30);
+            // else img.scaleToWidth(w / 2 + 100);
+            this.fabric.centerObject(img);
+          }
+          this.fabric.add(img);
+          this.fabric.setActiveObject(img);
+          return;
+        }
+        const img = this.imgs[i];
+        if (!img) return this.$refs.file.click();
+        else if (this.step == 0) {
+          if (!(await this.alert('사진을 삭제하시겠습니까?', { title: '삭제하기', okTitle: '삭제', confirm: true }))) return;
+          this.imgs.splice(i, 1);
+        }
+        i = this.cuts.indexOf(img);
+        if (i > -1) this.cuts.splice(i, 1);
+        else this.cuts.push(img);
+      },
+      // 트리밍 후 중앙부로 크롭 (편집기를 거치지 않은 케이스는 contain)
+      cropCut(src, fromFabric) {
+        return new Promise(res => {
+          const canvas = this.$refs.canvas;
+          canvas.width = CUT_WIDTH;
+          canvas.height = CUT_HEIGHT;
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          img.onload = () => {
+            const w = img.naturalWidth, h = img.naturalHeight;
+            if (fromFabric) {
+              const { left, top, width, height, scaleX, scaleY, angle } = this.fabric.getObjects()[0];
+              this.cuts[this.selIdx].fabric = { left, top, width, height, scaleX, scaleY, angle };
+              ctx.drawImage(img, w * .2, h * .2114, w * .6, h * .5772, 0, 0, CUT_WIDTH, CUT_HEIGHT);
+            }
+            else {
+              ctx.clearRect(0, 0, CUT_WIDTH, CUT_HEIGHT);
+              const scale = Math.max(w / CUT_WIDTH, h / CUT_HEIGHT);
+              ctx.drawImage(img, 0, 0, w, h, (CUT_WIDTH - w / scale) / 2, (CUT_HEIGHT - h / scale) / 2, w / scale, h / scale);
+            }
+            res(canvas.toDataURL());
+          }
+          img.src = src;
+        });
+      },
+      // 하단의 다음단계버튼 처리
+      async nextStep() {
+        // 테스트용 임시
+        // if (this.cuts.length == 0) this.cuts = [...this.imgs];
+        // 일반적인 다음단계진행
+        if (this.step == 2 && !(await this.alert('사진 트리밍 완료하셨나요?', { title: '스토리 미리보기', okTitle: '확인', confirm: true }))) return;
+        else if (this.step < 3) this.step++;
+        // 최종 합쳐진이미지 생성
+        else this.save();
+      },
+      async save() {
+        const canvas = this.$refs.canvas;
+        // 저장용
+        // canvas.width = CUT_WIDTH * 4;
+        // canvas.height = CUT_HEIGHT * 3;
+        // let ctx = canvas.getContext('2d'), i = 0;
+        // for (const img of this.$refs.cut)
+        //   ctx.drawImage(img, (i % 4) * CUT_WIDTH, Math.floor(i++ / 4) * CUT_HEIGHT, CUT_WIDTH, CUT_HEIGHT);
+        // await this.alert(`<img style="width:100%" src="${canvas.toDataURL('image/png')}">`, { title: `저장용 (${CUT_WIDTH * 4}x${CUT_HEIGHT * 3})` });
+
+        // 인쇄용 (5000x5000)
+        w = 5000;
+        canvas.width = w;
+        canvas.height = w;
+        ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, w);
+        for (const img of this.$refs.cut) {
+          ctx.drawImage(img, w / 2 - CUT_WIDTH / 2, w * 0.03, CUT_WIDTH, CUT_HEIGHT);
+          ctx.translate(w / 2, w / 2);
+          ctx.rotate(Math.PI / 180 * 30);
+          ctx.translate(-w / 2, -w / 2);
+        }
+        await new Promise(res => {
+          const bg = new Image();
+          bg.onload = () => res(ctx.drawImage(bg, 0, 0));
+          bg.src = 'imgs/bg.png';
+        });
+        ctx.textAlign = "center";
+        ctx.font = "390px verdana, sans-serif";
+        const dt = new Date();
+        ctx.fillText(`${(dt.getFullYear() + '').slice(-2)}${('0' + (dt.getMonth() + 1)).slice(-2)}${('0' + dt.getDate()).slice(-2)}`, w / 2, w * 0.43);
+        // ctx.fillText('0910000002', w / 2, w * 0.63);
+        // await this.alert(`<img style="width:100%" src="${canvas.toDataURL('image/png')}">`, { title: '인쇄용 (5000x5000)' });
+        const printPng = await (await fetch(canvas.toDataURL('image/png'))).blob();
+
+        // 썸네일용 (200x200)
+        w = 200;
+        canvas.width = w;
+        canvas.height = w;
+        ctx = canvas.getContext('2d');
+        await new Promise(res => {
+          const bg = new Image();
+          bg.onload = () => res(ctx.drawImage(bg, w / 9, w / 5, w * .672, w * 3 / 5));
+          bg.src = 'imgs/prod.png';
+        });
+        const cw = CUT_WIDTH / 25, ch = CUT_HEIGHT / 25
+        for (const img of this.$refs.cut) {
+          ctx.drawImage(img, w / 2 - cw / 2, w * 0.03, cw, ch);
+          ctx.translate(w / 2, w / 2);
+          ctx.rotate(Math.PI / 180 * 30);
+          ctx.translate(-w / 2, -w / 2);
+        }
+        const thumbPng = await (await fetch(canvas.toDataURL('image/png'))).blob();
+        // data\skin\front\moment\js\editor.js 1988라인을 참조함
+        const sno = new URLSearchParams(window.location.search).get('sno') || '';
+        const _formData = new FormData();
+        _formData.append("type", "order");
+        _formData.append("sub", "image");
+        _formData.append("sno", sno);
+        _formData.append("frontImage", thumbPng);
+        _formData.append("backImage", printPng);
+        const data = await(await fetch('/editor/api.php',{method:'POST',body:_formData})).json();
+        if (data && data.frontImage) parent.gd_goods_order(undefined, [data.frontImage, data.backImage]);
+      },
+      async complete(thumbPng) {
+        // 서브밋을 위한 알림제거
+        window.onbeforeunload = null;
+        if (await this.alert(`<img style="max-width:100%" src="${thumbPng}"><br><br>장바구니로 이동하시겠습니까?`, { title: '저장이 완료되었습니다.', okTitle: '장바구니 이동', confirm: true }))
+          return parent.location = '/order/cart.php';
+        parent.document.querySelector('.editer_form').style.display = '';
+        location.reload();
+      },
+      preview() {
+        if (!this.isFull) { this.isFull = true; this.selIdx += 12 }
+        this.$refs.preview.style.transform = `rotate(-${(this.selIdx++) * 30}deg)`;
+      },
+      async setStep(to, from) {
+        if (to > 0 && this.imgs.length < 12) {
+          this.step = 0;
+          return this.toast('12컷 선택<br>완료해주세요');
+        }
+        else if (to > 1 && this.cuts.length < 12) {
+          this.step = from;
+          return this.toast('순서 선택<br>완료해주세요');
+        }
+        if (this.step == 2) {
+          // if (!this.fabric) {
+          await this.$nextTick();
+          const el = this.$refs.fabric.parentNode;
+          el.firstChild.style.zoom = el.offsetWidth / CUT_WIDTH;
+          this.$refs.fabric.width = CUT_WIDTH;
+          this.$refs.fabric.height = CUT_WIDTH;
+          this.fabric = new fabric.Canvas(this.$refs.fabric);
+          // let mask;
+          // fabric.Image.fromURL('imgs/fabricBg.svg', img => {
+          //   mask = img;
+          //   mask.scaleToWidth(CUT_WIDTH - 10);
+          //   this.fabric.setOverlayImage(mask, this.fabric.renderAll.bind(this.fabric));
+          // });
+          let mask = new fabric.Rect({
+            left: CUT_WIDTH / 4 - 30,
+            top: CUT_WIDTH / 4,
+            width: CUT_WIDTH / 2 + 60,
+            height: CUT_WIDTH / 2,
+            rx: CUT_WIDTH / 15,
+            ry: CUT_WIDTH / 15,
+            // objectCaching: false,
+          });
+          this.fabric.clipPath = mask;
+          this.fabric.controlsAboveOverlay = true;
+          this.fabric.selection = false;
+          this.fabric.on('object:modified', async () => {
+            // mask.opacity = 0;
+            this.fabric.clipPath = null;
+            const src = this.fabric.toDataURL();
+            // mask.opacity = 1;
+            this.fabric.clipPath = mask;
+            this.cuts[this.selIdx].cut = await this.cropCut(src, true);
+            this.$forceUpdate();
+          });
+          this.sel(0);
+          this.tooltip({ top: '24em', left: 'calc(75vw - 64px)' }, '레드 포인트를 움직이면<br>줌/회전을 할 수 있어요');
+        }
+        else if (this.step == 3) {
+          for (const cut of this.cuts) if (!cut.cut) cut.cut = await this.cropCut(cut.src);
+          setTimeout(() => this.tooltip({ top: 'calc(7.5em + 30vw)', left: 'calc(50vw - 72px)' }, '클릭하면 이미지를 확대할 수 있어요'), 500);
+        }
+        await this.$nextTick();
+        if (this.step == 1) {
+          if (this.cuts.length < 1) this.tooltip('.load', '클릭해서 사진의 순서를 정해주세요');
+        }
+      },
+      $t,
+    },
+    mounted() {
+      // if (localStorage.$lang) $lang = JSON.parse(localStorage.$lang);
+      // else
+      const lang = localStorage.$mylang || navigator.language.slice(0, 2);
+      fetch(`/editor/${lang}.html`).then(r => r.text().then(r => {
+        localStorage.$lang = r; window.$lang = this.$rang = JSON.parse(r);
+        $('t,[data-t]').each((_, el) => {
+          const t = el.dataset.t || el.innerHTML.trim();
+          // console.log(t)
+          el.innerHTML = $lang[t] || t;
+        });
+      }));
+      document.title = this.$t('스토리만들기');
+      this.isLandscape = innerHeight < 430;
+      if (!isTest) return;
+      Array(12).fill().forEach((_, i) => this.cuts[i] = { src: i % 2 ? 'imgs/prod.png' : '/data/editor/goods/230616/img1_detail_011301.jpg' });
+      this.imgs = [...this.cuts];
+      setTimeout(() => this.step = 2, 100);
+    },
+    watch: {
+      step: 'setStep'
+    },
+  });
+</script>
+
+</html>
